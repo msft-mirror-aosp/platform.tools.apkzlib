@@ -8,6 +8,7 @@ maven_java_library(
         "src/main/java/**/*.java",
     ]),
     pom = ":pom",
+    resource_strip_prefix = "tools/apkzlib",
     visibility = ["//tools/base/build-system:__subpackages__"],
     deps = [
         "//tools/base/build-system:tools.apksig",
