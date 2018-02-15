@@ -12,15 +12,13 @@ dependencies {
     testCompile project(':base:testutils')
 }
 
-configurations {
-    sourcesOnly
-}
+group = 'com.android.tools.build'
+archivesBaseName = 'apkzlib'
+version = rootProject.ext.buildVersion
 
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
-}
+project.ext.pomName = 'Android APK Zip Library'
+project.ext.pomDesc = 'Library used to incrementally build and sign APKs'
 
-artifacts {
-    sourcesOnly sourcesJar
-}
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/bintray.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"
