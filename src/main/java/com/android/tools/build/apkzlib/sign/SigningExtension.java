@@ -89,10 +89,12 @@ public class SigningExtension {
     private final boolean v2SigningEnabled;
 
     /**
-     * Certificate of the signer, to be embedded into the APK's signature.
+     * List of certificates to embed in the APKs.
+     *
+     * <p>The first element of the list must be the certificate of the signer.
      */
     @Nonnull
-    private final X509Certificate certificate;
+    private final ImmutableList<X509Certificate> certificates;
 
     /**
      * APK signer which performs most of the heavy lifting.
@@ -137,9 +139,23 @@ public class SigningExtension {
             @Nonnull PrivateKey privateKey,
             boolean v1SigningEnabled,
             boolean v2SigningEnabled) throws InvalidKeyException {
+        this(
+                minSdkVersion,
+                ImmutableList.of(certificate),
+                privateKey,
+                v1SigningEnabled,
+                v2SigningEnabled);
+    }
+
+    public SigningExtension(
+            int minSdkVersion,
+            @Nonnull ImmutableList<X509Certificate> certificates,
+            @Nonnull PrivateKey privateKey,
+            boolean v1SigningEnabled,
+            boolean v2SigningEnabled) throws InvalidKeyException {
         DefaultApkSignerEngine.SignerConfig signerConfig =
                 new DefaultApkSignerEngine.SignerConfig.Builder(
-                        "CERT", privateKey, ImmutableList.of(certificate)).build();
+                        "CERT", privateKey, certificates).build();
         signer =
                 new DefaultApkSignerEngine.Builder(ImmutableList.of(signerConfig), minSdkVersion)
                         .setOtherSignersSignaturesPreserved(false)
@@ -150,7 +166,7 @@ public class SigningExtension {
         this.minSdkVersion = minSdkVersion;
         this.v1SigningEnabled = v1SigningEnabled;
         this.v2SigningEnabled = v2SigningEnabled;
-        this.certificate = certificate;
+        this.certificates = certificates;
     }
 
     public void register(@Nonnull ZFile zFile) throws NoSuchAlgorithmException, IOException {
@@ -225,7 +241,7 @@ public class SigningExtension {
         byte[] expectedEncodedCert;
         byte[] actualEncodedCert;
         try {
-            expectedEncodedCert = certificate.getEncoded();
+            expectedEncodedCert = certificates.get(0).getEncoded();
             actualEncodedCert = verifiedSignerCerts.get(0).getEncoded();
         } catch (CertificateEncodingException e) {
             // Failed to encode signing certificates
