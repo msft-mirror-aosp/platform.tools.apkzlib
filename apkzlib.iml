@@ -14,8 +14,8 @@
     <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
     <orderEntry type="library" scope="TEST" name="mockito" level="project" />
     <orderEntry type="library" name="bouncy-castle" level="project" />
-    <orderEntry type="module" module-name="testutils" scope="TEST" />
     <orderEntry type="module" module-name="apksig" />
     <orderEntry type="library" name="KotlinJavaRuntime" level="project" />
+    <orderEntry type="module" module-name="android.sdktools.testutils" scope="TEST" />
   </component>
 </module>
