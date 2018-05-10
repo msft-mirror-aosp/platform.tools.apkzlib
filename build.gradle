@@ -10,6 +10,7 @@ dependencies {
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:2.7.1'
     testCompile project(':base:testutils')
+    testCompile libs.truth
 }
 
 group = 'com.android.tools.build'
