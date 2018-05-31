@@ -19,36 +19,28 @@ package com.android.tools.build.apkzlib.zfile;
 import com.android.tools.build.apkzlib.zip.ZFileOptions;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import javax.annotation.Nonnull;
 
-/**
- * Creates instances of {@link ApkZFileCreator}.
- */
+/** Creates instances of {@link ApkZFileCreator}. */
 public class ApkZFileCreatorFactory implements ApkCreatorFactory {
 
-    /**
-     * Options for the {@link ZFileOptions} to use in all APKs.
-     */
-    @Nonnull
-    private final ZFileOptions options;
+  /** Options for the {@link ZFileOptions} to use in all APKs. */
+  private final ZFileOptions options;
 
-    /**
-     * Creates a new factory.
-     *
-     * @param options the options to use for all instances created
-     */
-    public ApkZFileCreatorFactory(@Nonnull ZFileOptions options) {
-        this.options = options;
+  /**
+   * Creates a new factory.
+   *
+   * @param options the options to use for all instances created
+   */
+  public ApkZFileCreatorFactory(ZFileOptions options) {
+    this.options = options;
+  }
+
+  @Override
+  public ApkCreator make(CreationData creationData) {
+    try {
+      return new ApkZFileCreator(creationData, options);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
     }
-
-
-    @Override
-    @Nonnull
-    public ApkCreator make(@Nonnull CreationData creationData) {
-        try {
-            return new ApkZFileCreator(creationData, options);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
+  }
 }

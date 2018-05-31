@@ -22,26 +22,29 @@ import static org.junit.Assert.assertTrue;
 import com.android.tools.build.apkzlib.utils.ApkZFileTestUtils;
 import java.io.File;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class ReadWithDifferentCompressionLevelsTest {
 
-    @Test
-    public void readL9() throws Exception {
-        File l9File = ApkZFileTestUtils.getResource("/testData/packaging/l9.zip");
-        assertTrue(l9File.isFile());
+  @Test
+  public void readL9() throws Exception {
+    File l9File = ApkZFileTestUtils.getResource("packaging/l9.zip");
+    assertTrue(l9File.isFile());
 
-        try (ZFile read = new ZFile(l9File, new ZFileOptions())) {
-            assertNotNull(read.get("text-files/rfc2460.txt"));
-        }
+    try (ZFile read = new ZFile(l9File, new ZFileOptions())) {
+      assertNotNull(read.get("text-files/rfc2460.txt"));
     }
+  }
 
-    @Test
-    public void readL1() throws Exception {
-        File l1File = ApkZFileTestUtils.getResource("/testData/packaging/l1.zip");
-        assertTrue(l1File.isFile());
+  @Test
+  public void readL1() throws Exception {
+    File l1File = ApkZFileTestUtils.getResource("packaging/l1.zip");
+    assertTrue(l1File.isFile());
 
-        try (ZFile read = new ZFile(l1File, new ZFileOptions())) {
-            assertNotNull(read.get("text-files/rfc2460.txt"));
-        }
+    try (ZFile read = new ZFile(l1File, new ZFileOptions())) {
+      assertNotNull(read.get("text-files/rfc2460.txt"));
     }
+  }
 }

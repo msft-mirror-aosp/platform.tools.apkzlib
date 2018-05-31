@@ -28,393 +28,399 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import org.mockito.Mockito;
 
+@RunWith(JUnit4.class)
 public class ZFileNotificationTest {
-    private static class KeepListener extends ZFileExtension {
-        public int open;
-        public int beforeUpdated;
-        public int updated;
-        public int closed;
-        public List<ApkZLibPair<StoredEntry, StoredEntry>> added;
-        public List<StoredEntry> removed;
-        public IOExceptionRunnable returnRunnable;
+  private static class KeepListener extends ZFileExtension {
+    public int open;
+    public int beforeUpdated;
+    public int updated;
+    public int closed;
+    public List<ApkZLibPair<StoredEntry, StoredEntry>> added;
+    public List<StoredEntry> removed;
+    public IOExceptionRunnable returnRunnable;
 
-        KeepListener() {
-            reset();
-        }
-
-        @Nullable
-        @Override
-        public IOExceptionRunnable open() {
-            open++;
-            return returnRunnable;
-        }
-
-        @Nullable
-        @Override
-        public IOExceptionRunnable beforeUpdate() {
-            beforeUpdated++;
-            return returnRunnable;
-        }
-
-        @Override
-        public void updated() {
-            updated++;
-        }
-
-        @Override
-        public void closed() {
-            closed++;
-        }
-
-        @Nullable
-        @Override
-        public IOExceptionRunnable added(@Nonnull StoredEntry entry,
-                @Nullable StoredEntry replaced) {
-            added.add(new ApkZLibPair<>(entry, replaced));
-            return returnRunnable;
-        }
-
-        @Nullable
-        @Override
-        public IOExceptionRunnable removed(@Nonnull StoredEntry entry) {
-            removed.add(entry);
-            return returnRunnable;
-        }
-
-        void reset() {
-            open = 0;
-            beforeUpdated = 0;
-            updated = 0;
-            closed = 0;
-            added = Lists.newArrayList();
-            removed = Lists.newArrayList();
-        }
-
-        void assertClear() {
-            assertEquals(0, open);
-            assertEquals(0, beforeUpdated);
-            assertEquals(0, updated);
-            assertEquals(0, closed);
-            assertEquals(0, added.size());
-            assertEquals(0, removed.size());
-        }
+    KeepListener() {
+      reset();
     }
 
-    @Rule
-    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
-
-    @Test
-    public void notifyAddFile() throws Exception {
-        try (ZFile zf = new ZFile(new File(mTemporaryFolder.getRoot(), "a.zip"))) {
-            KeepListener kl = new KeepListener();
-            zf.addZFileExtension(kl);
-
-            kl.assertClear();
-
-            zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
-            zf.finishAllBackgroundTasks();
-            assertEquals(1, kl.added.size());
-            StoredEntry addedSe = kl.added.get(0).v1;
-            assertNull(kl.added.get(0).v2);
-            kl.added.clear();
-            kl.assertClear();
-
-            StoredEntry foo = zf.get("foo");
-            assertNotNull(foo);
-
-            assertSame(foo, addedSe);
-        }
+    @Nullable
+    @Override
+    public IOExceptionRunnable open() {
+      open++;
+      return returnRunnable;
     }
 
-    @Test
-    public void notifyRemoveFile() throws Exception {
-        try (ZFile zf = new ZFile(new File(mTemporaryFolder.getRoot(), "a.zip"))) {
-            KeepListener kl = new KeepListener();
-            zf.addZFileExtension(kl);
-
-            kl.assertClear();
-
-            zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
-            zf.finishAllBackgroundTasks();
-            kl.reset();
-
-            StoredEntry foo = zf.get("foo");
-            assertNotNull(foo);
-
-            foo.delete();
-            assertEquals(1, kl.removed.size());
-            assertSame(foo, kl.removed.get(0));
-            kl.removed.clear();
-            kl.assertClear();
-        }
+    @Nullable
+    @Override
+    public IOExceptionRunnable beforeUpdate() {
+      beforeUpdated++;
+      return returnRunnable;
     }
 
-    @Test
-    public void notifyUpdateFile() throws Exception {
-        try (ZFile zf = new ZFile(new File(mTemporaryFolder.getRoot(), "a.zip"))) {
-            KeepListener kl = new KeepListener();
-            zf.addZFileExtension(kl);
-
-            kl.assertClear();
-
-            zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
-            zf.finishAllBackgroundTasks();
-            StoredEntry foo1 = zf.get("foo");
-            kl.reset();
-
-            zf.add("foo", new ByteArrayInputStream(new byte[] { 2, 3 }));
-            zf.finishAllBackgroundTasks();
-            StoredEntry foo2 = zf.get("foo");
-
-            assertEquals(1, kl.added.size());
-            assertSame(foo2, kl.added.get(0).v1);
-            assertSame(foo1, kl.added.get(0).v2);
-
-            kl.added.clear();
-            kl.assertClear();
-        }
+    @Override
+    public void updated() {
+      updated++;
     }
 
-    @Test
-    public void notifyOpenUpdateClose() throws Exception {
-        KeepListener kl = new KeepListener();
-        try (ZFile zf = new ZFile(new File(mTemporaryFolder.getRoot(), "a.zip"))) {
-            zf.addZFileExtension(kl);
-
-            kl.assertClear();
-
-            zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
-            zf.finishAllBackgroundTasks();
-            kl.reset();
-        }
-
-        assertEquals(1, kl.open);
-        kl.open = 0;
-        assertEquals(1, kl.beforeUpdated);
-        assertEquals(1, kl.updated);
-        kl.beforeUpdated = 0;
-        kl.updated = 0;
-        assertEquals(1, kl.closed);
-        kl.closed = 0;
-        kl.assertClear();
+    @Override
+    public void closed() {
+      closed++;
     }
 
-    @Test
-    public void notifyOpenUpdate() throws Exception {
-        KeepListener kl = new KeepListener();
-        try (ZFile zf = new ZFile(new File(mTemporaryFolder.getRoot(), "a.zip"))) {
-            zf.addZFileExtension(kl);
-
-            kl.assertClear();
-
-            zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
-            zf.finishAllBackgroundTasks();
-            kl.reset();
-            zf.update();
-
-            assertEquals(1, kl.open);
-            kl.open = 0;
-            assertEquals(1, kl.beforeUpdated);
-            assertEquals(1, kl.updated);
-            kl.beforeUpdated = 0;
-            kl.updated = 0;
-            kl.assertClear();
-        }
+    @Nullable
+    @Override
+    public IOExceptionRunnable added(StoredEntry entry, @Nullable StoredEntry replaced) {
+      added.add(new ApkZLibPair<>(entry, replaced));
+      return returnRunnable;
     }
 
-    @Test
-    public void notifyUpdate() throws Exception {
-        try (ZFile zf = new ZFile(new File(mTemporaryFolder.getRoot(), "a.zip"))) {
-            KeepListener kl = new KeepListener();
-            zf.addZFileExtension(kl);
-
-            kl.assertClear();
-
-            zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
-            zf.update();
-            kl.reset();
-
-            zf.add("bar", new ByteArrayInputStream(new byte[] { 2, 3 }));
-            zf.finishAllBackgroundTasks();
-            kl.reset();
-
-            zf.update();
-            assertEquals(1, kl.beforeUpdated);
-            assertEquals(1, kl.updated);
-            kl.beforeUpdated = 0;
-            kl.updated = 0;
-            kl.assertClear();
-        }
+    @Nullable
+    @Override
+    public IOExceptionRunnable removed(StoredEntry entry) {
+      removed.add(entry);
+      return returnRunnable;
     }
 
-    @Test
-    public void removedListenersAreNotNotified() throws Exception {
-        try (ZFile zf = new ZFile(new File(mTemporaryFolder.getRoot(), "a.zip"))) {
-            KeepListener kl = new KeepListener();
-            zf.addZFileExtension(kl);
-
-            kl.assertClear();
-
-            zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
-            zf.finishAllBackgroundTasks();
-            assertEquals(1, kl.added.size());
-            kl.added.clear();
-            kl.assertClear();
-
-            zf.removeZFileExtension(kl);
-
-            zf.add("foo", new ByteArrayInputStream(new byte[] { 2, 3 }));
-            zf.finishAllBackgroundTasks();
-            kl.assertClear();
-        }
+    void reset() {
+      open = 0;
+      beforeUpdated = 0;
+      updated = 0;
+      closed = 0;
+      added = Lists.newArrayList();
+      removed = Lists.newArrayList();
     }
 
-    @Test
-    public void actionsExecutedAtEndOfNotification() throws Exception {
-        try (ZFile zf = new ZFile(new File(mTemporaryFolder.getRoot(), "a.zip"))) {
+    void assertClear() {
+      assertEquals(0, open);
+      assertEquals(0, beforeUpdated);
+      assertEquals(0, updated);
+      assertEquals(0, closed);
+      assertEquals(0, added.size());
+      assertEquals(0, removed.size());
+    }
+  }
 
-            IOException death[] = new IOException[1];
+  @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-            KeepListener kl1 = new KeepListener();
-            zf.addZFileExtension(kl1);
-            kl1.returnRunnable = new IOExceptionRunnable() {
-                private boolean once = false;
+  @Test
+  public void notifyAddFile() throws Exception {
+    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+      KeepListener kl = new KeepListener();
+      zf.addZFileExtension(kl);
 
-                @Override
-                public void run() {
-                    if (once) {
-                        return;
-                    }
+      kl.assertClear();
 
-                    once = true;
+      zf.add("foo", new ByteArrayInputStream(new byte[] {1, 2}));
+      zf.finishAllBackgroundTasks();
+      assertEquals(1, kl.added.size());
+      StoredEntry addedSe = kl.added.get(0).v1;
+      assertNull(kl.added.get(0).v2);
+      kl.added.clear();
+      kl.assertClear();
 
-                    try {
-                        zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
-                    } catch (IOException e) {
-                        death[0] = e;
-                    }
-                }
-            };
+      StoredEntry foo = zf.get("foo");
+      assertNotNull(foo);
 
-            KeepListener kl2 = new KeepListener();
-            zf.addZFileExtension(kl2);
-            kl2.returnRunnable = new IOExceptionRunnable() {
-                private boolean once = false;
+      assertSame(foo, addedSe);
+    }
+  }
 
-                @Override
-                public void run() {
-                    if (once) {
-                        return;
-                    }
+  @Test
+  public void notifyRemoveFile() throws Exception {
+    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+      KeepListener kl = new KeepListener();
+      zf.addZFileExtension(kl);
 
-                    once = true;
-                    try {
-                        zf.add("bar", new ByteArrayInputStream(new byte[] { 1, 2 }));
-                    } catch (IOException e) {
-                        death[0] = e;
-                    }
-                }
-            };
+      kl.assertClear();
 
-            kl1.assertClear();
-            kl2.assertClear();
+      zf.add("foo", new ByteArrayInputStream(new byte[] {1, 2}));
+      zf.finishAllBackgroundTasks();
+      kl.reset();
 
-            zf.add("xpto", new ByteArrayInputStream(new byte[] { 1, 2 }));
-            zf.finishAllBackgroundTasks();
+      StoredEntry foo = zf.get("foo");
+      assertNotNull(foo);
 
-            assertEquals(3, kl1.added.size());
-            kl1.added.clear();
-            kl1.assertClear();
-            assertEquals(3, kl2.added.size());
-            kl2.added.clear();
-            kl2.assertClear();
+      foo.delete();
+      assertEquals(1, kl.removed.size());
+      assertSame(foo, kl.removed.get(0));
+      kl.removed.clear();
+      kl.assertClear();
+    }
+  }
 
-            assertNull(death[0]);
-        }
+  @Test
+  public void notifyUpdateFile() throws Exception {
+    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+      KeepListener kl = new KeepListener();
+      zf.addZFileExtension(kl);
+
+      kl.assertClear();
+
+      zf.add("foo", new ByteArrayInputStream(new byte[] {1, 2}));
+      zf.finishAllBackgroundTasks();
+      StoredEntry foo1 = zf.get("foo");
+      kl.reset();
+
+      zf.add("foo", new ByteArrayInputStream(new byte[] {2, 3}));
+      zf.finishAllBackgroundTasks();
+      StoredEntry foo2 = zf.get("foo");
+
+      assertEquals(1, kl.added.size());
+      assertSame(foo2, kl.added.get(0).v1);
+      assertSame(foo1, kl.added.get(0).v2);
+
+      kl.added.clear();
+      kl.assertClear();
+    }
+  }
+
+  @Test
+  public void notifyOpenUpdateClose() throws Exception {
+    KeepListener kl = new KeepListener();
+    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+      zf.addZFileExtension(kl);
+
+      kl.assertClear();
+
+      zf.add("foo", new ByteArrayInputStream(new byte[] {1, 2}));
+      zf.finishAllBackgroundTasks();
+      kl.reset();
     }
 
-    @Test
-    public void canAddFilesDuringUpdateNotification() throws Exception {
-        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
-        try (ZFile zf = new ZFile(zipFile)) {
-            IOException death[] = new IOException[1];
+    assertEquals(1, kl.open);
+    kl.open = 0;
+    assertEquals(1, kl.beforeUpdated);
+    assertEquals(1, kl.updated);
+    kl.beforeUpdated = 0;
+    kl.updated = 0;
+    assertEquals(1, kl.closed);
+    kl.closed = 0;
+    kl.assertClear();
+  }
 
-            KeepListener kl1 = new KeepListener();
-            zf.addZFileExtension(kl1);
+  @Test
+  public void notifyOpenUpdate() throws Exception {
+    KeepListener kl = new KeepListener();
+    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+      zf.addZFileExtension(kl);
 
-            zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
-            zf.finishAllBackgroundTasks();
+      kl.assertClear();
 
-            kl1.returnRunnable = new IOExceptionRunnable() {
-                private boolean once = false;
+      zf.add("foo", new ByteArrayInputStream(new byte[] {1, 2}));
+      zf.finishAllBackgroundTasks();
+      kl.reset();
+      zf.update();
 
-                @Override
-                public void run() {
-                    if (once) {
-                        return;
-                    }
+      assertEquals(1, kl.open);
+      kl.open = 0;
+      assertEquals(1, kl.beforeUpdated);
+      assertEquals(1, kl.updated);
+      kl.beforeUpdated = 0;
+      kl.updated = 0;
+      kl.assertClear();
+    }
+  }
 
-                    once = true;
+  @Test
+  public void notifyUpdate() throws Exception {
+    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+      KeepListener kl = new KeepListener();
+      zf.addZFileExtension(kl);
 
-                    try {
-                        zf.add("bar", new ByteArrayInputStream(new byte[] { 1, 2 }));
-                    } catch (IOException e) {
-                        death[0] = e;
-                    }
-                }
-            };
-        }
+      kl.assertClear();
 
-        try (ZFile zf2 = new ZFile(zipFile)) {
-            StoredEntry fooFile = zf2.get("foo");
-            assertNotNull(fooFile);
-            StoredEntry barFile = zf2.get("bar");
-            assertNotNull(barFile);
-        }
+      zf.add("foo", new ByteArrayInputStream(new byte[] {1, 2}));
+      zf.update();
+      kl.reset();
+
+      zf.add("bar", new ByteArrayInputStream(new byte[] {2, 3}));
+      zf.finishAllBackgroundTasks();
+      kl.reset();
+
+      zf.update();
+      assertEquals(1, kl.beforeUpdated);
+      assertEquals(1, kl.updated);
+      kl.beforeUpdated = 0;
+      kl.updated = 0;
+      kl.assertClear();
+    }
+  }
+
+  @Test
+  public void removedListenersAreNotNotified() throws Exception {
+    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+      KeepListener kl = new KeepListener();
+      zf.addZFileExtension(kl);
+
+      kl.assertClear();
+
+      zf.add("foo", new ByteArrayInputStream(new byte[] {1, 2}));
+      zf.finishAllBackgroundTasks();
+      assertEquals(1, kl.added.size());
+      kl.added.clear();
+      kl.assertClear();
+
+      zf.removeZFileExtension(kl);
+
+      zf.add("foo", new ByteArrayInputStream(new byte[] {2, 3}));
+      zf.finishAllBackgroundTasks();
+      kl.assertClear();
+    }
+  }
+
+  @Test
+  public void actionsExecutedAtEndOfNotification() throws Exception {
+    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+
+      IOException[] death = new IOException[1];
+
+      KeepListener kl1 = new KeepListener();
+      zf.addZFileExtension(kl1);
+      kl1.returnRunnable =
+          new IOExceptionRunnable() {
+            private boolean once = false;
+
+            @Override
+            public void run() {
+              if (once) {
+                return;
+              }
+
+              once = true;
+
+              try {
+                zf.add("foo", new ByteArrayInputStream(new byte[] {1, 2}));
+              } catch (IOException e) {
+                death[0] = e;
+              }
+            }
+          };
+
+      KeepListener kl2 = new KeepListener();
+      zf.addZFileExtension(kl2);
+      kl2.returnRunnable =
+          new IOExceptionRunnable() {
+            private boolean once = false;
+
+            @Override
+            public void run() {
+              if (once) {
+                return;
+              }
+
+              once = true;
+              try {
+                zf.add("bar", new ByteArrayInputStream(new byte[] {1, 2}));
+              } catch (IOException e) {
+                death[0] = e;
+              }
+            }
+          };
+
+      kl1.assertClear();
+      kl2.assertClear();
+
+      zf.add("xpto", new ByteArrayInputStream(new byte[] {1, 2}));
+      zf.finishAllBackgroundTasks();
+
+      assertEquals(3, kl1.added.size());
+      kl1.added.clear();
+      kl1.assertClear();
+      assertEquals(3, kl2.added.size());
+      kl2.added.clear();
+      kl2.assertClear();
+
+      assertNull(death[0]);
+    }
+  }
+
+  @Test
+  public void canAddFilesDuringUpdateNotification() throws Exception {
+    File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
+    try (ZFile zf = new ZFile(zipFile)) {
+      IOException[] death = new IOException[1];
+
+      KeepListener kl1 = new KeepListener();
+      zf.addZFileExtension(kl1);
+
+      zf.add("foo", new ByteArrayInputStream(new byte[] {1, 2}));
+      zf.finishAllBackgroundTasks();
+
+      kl1.returnRunnable =
+          new IOExceptionRunnable() {
+            private boolean once = false;
+
+            @Override
+            public void run() {
+              if (once) {
+                return;
+              }
+
+              once = true;
+
+              try {
+                zf.add("bar", new ByteArrayInputStream(new byte[] {1, 2}));
+              } catch (IOException e) {
+                death[0] = e;
+              }
+            }
+          };
     }
 
-    @Test
-    public void notifyOnceEntriesWritten() throws Exception {
-        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
-        ZFileExtension ext = Mockito.mock(ZFileExtension.class);
-        try (ZFile zf = new ZFile(zipFile)) {
-            zf.addZFileExtension(ext);
+    try (ZFile zf2 = new ZFile(zipFile)) {
+      StoredEntry fooFile = zf2.get("foo");
+      assertNotNull(fooFile);
+      StoredEntry barFile = zf2.get("bar");
+      assertNotNull(barFile);
+    }
+  }
 
-            zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
-            zf.finishAllBackgroundTasks();
+  @Test
+  public void notifyOnceEntriesWritten() throws Exception {
+    File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
+    ZFileExtension ext = Mockito.mock(ZFileExtension.class);
+    try (ZFile zf = new ZFile(zipFile)) {
+      zf.addZFileExtension(ext);
 
-            Mockito.verify(ext, Mockito.times(0)).entriesWritten();
-        }
+      zf.add("foo", new ByteArrayInputStream(new byte[] {1, 2}));
+      zf.finishAllBackgroundTasks();
 
-        Mockito.verify(ext, Mockito.times(1)).entriesWritten();
+      Mockito.verify(ext, Mockito.times(0)).entriesWritten();
     }
 
-    @Test
-    public void notifyTwiceEntriesWrittenIfCdChanged() throws Exception {
-        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
-        ZFileExtension ext = Mockito.mock(ZFileExtension.class);
-        try (ZFile zf = new ZFile(zipFile)) {
-            Mockito.doAnswer((invocation) -> {
+    Mockito.verify(ext, Mockito.times(1)).entriesWritten();
+  }
+
+  @Test
+  public void notifyTwiceEntriesWrittenIfCdChanged() throws Exception {
+    File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
+    ZFileExtension ext = Mockito.mock(ZFileExtension.class);
+    try (ZFile zf = new ZFile(zipFile)) {
+      Mockito.doAnswer(
+              (invocation) -> {
                 zf.setExtraDirectoryOffset(10);
                 Mockito.doNothing().when(ext).entriesWritten();
                 return null;
-            }).when(ext).entriesWritten();
+              })
+          .when(ext)
+          .entriesWritten();
 
-            zf.addZFileExtension(ext);
+      zf.addZFileExtension(ext);
 
-            zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
-            zf.finishAllBackgroundTasks();
+      zf.add("foo", new ByteArrayInputStream(new byte[] {1, 2}));
+      zf.finishAllBackgroundTasks();
 
-            Mockito.verify(ext, Mockito.times(0)).entriesWritten();
-        }
-
-        Mockito.verify(ext, Mockito.times(2)).entriesWritten();
+      Mockito.verify(ext, Mockito.times(0)).entriesWritten();
     }
+
+    Mockito.verify(ext, Mockito.times(2)).entriesWritten();
+  }
 }

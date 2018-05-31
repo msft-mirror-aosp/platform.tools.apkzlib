@@ -16,24 +16,19 @@
 
 package com.android.tools.build.apkzlib.zip;
 
-import javax.annotation.Nonnull;
 
-/**
- * An alignment rule defines how to a file should be aligned in a zip, based on its name.
- */
+/** An alignment rule defines how to a file should be aligned in a zip, based on its name. */
 public interface AlignmentRule {
 
-    /**
-     * Alignment value of files that do not require alignment.
-     */
-    int NO_ALIGNMENT = 1;
+  /** Alignment value of files that do not require alignment. */
+  int NO_ALIGNMENT = 1;
 
-    /**
-     * Obtains the alignment this rule computes for a given path.
-     *
-     * @param path the path in the zip file
-     * @return the alignment value, always greater than {@code 0}; if this rule places no
-     * restrictions on the provided path, then {@link AlignmentRule#NO_ALIGNMENT} is returned
-     */
-    int alignment(@Nonnull String path);
+  /**
+   * Obtains the alignment this rule computes for a given path.
+   *
+   * @param path the path in the zip file
+   * @return the alignment value, always greater than {@code 0}; if this rule places no restrictions
+   *     on the provided path, then {@link AlignmentRule#NO_ALIGNMENT} is returned
+   */
+  int alignment(String path);
 }

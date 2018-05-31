@@ -16,28 +16,17 @@
 
 package com.android.tools.build.apkzlib.zfile;
 
-/**
- * Java manifest attributes and some default values.
- */
+/** Java manifest attributes and some default values. */
 public interface ManifestAttributes {
-    /**
-     * Manifest attribute with the built by information.
-     */
-    String BUILT_BY = "Built-By";
+  /** Manifest attribute with the built by information. */
+  String BUILT_BY = "Built-By";
 
-    /**
-     * Manifest attribute with the created by information.
-     */
-    String CREATED_BY = "Created-By";
+  /** Manifest attribute with the created by information. */
+  String CREATED_BY = "Created-By";
 
-    /**
-     * Manifest attribute with the manifest version.
-     */
-    String MANIFEST_VERSION = "Manifest-Version";
+  /** Manifest attribute with the manifest version. */
+  String MANIFEST_VERSION = "Manifest-Version";
 
-    /**
-     * Manifest attribute value with the manifest version.
-     */
-    String CURRENT_MANIFEST_VERSION = "1.0";
-
+  /** Manifest attribute value with the manifest version. */
+  String CURRENT_MANIFEST_VERSION = "1.0";
 }

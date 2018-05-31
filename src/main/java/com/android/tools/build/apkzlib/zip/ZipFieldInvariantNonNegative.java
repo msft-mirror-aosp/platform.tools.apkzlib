@@ -16,18 +16,16 @@
 
 package com.android.tools.build.apkzlib.zip;
 
-/**
- * Invariant that verifies a field's value is not negative.
- */
+/** Invariant that verifies a field's value is not negative. */
 class ZipFieldInvariantNonNegative implements ZipFieldInvariant {
 
-    @Override
-    public boolean isValid(long value) {
-        return value >= 0;
-    }
+  @Override
+  public boolean isValid(long value) {
+    return value >= 0;
+  }
 
-    @Override
-    public String getName() {
-        return "Is positive";
-    }
+  @Override
+  public String getName() {
+    return "Is positive";
+  }
 }

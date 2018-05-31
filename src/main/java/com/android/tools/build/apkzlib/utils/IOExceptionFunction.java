@@ -19,35 +19,33 @@ package com.android.tools.build.apkzlib.utils;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-/**
- * Function that can throw an I/O Exception
- */
+/** Function that can throw an I/O Exception */
 @FunctionalInterface
 public interface IOExceptionFunction<F, T> {
 
-    /**
-     * Applies the function to the given input.
-     * @param input the input
-     * @return the function result
-     */
-    @Nullable T apply(@Nullable F input) throws IOException;
+  /**
+   * Applies the function to the given input.
+   *
+   * @param input the input
+   * @return the function result
+   */
+  @Nullable
+  T apply(@Nullable F input) throws IOException;
 
-    /**
-     * Wraps a function that may throw an IO Exception throwing an {@code UncheckedIOException}.
-     *
-     * @param f the function
-     */
-    @Nonnull
-    static <F, T> Function<F, T> asFunction(@Nonnull IOExceptionFunction<F, T> f)  {
-        return i -> {
-            try {
-                return f.apply(i);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        };
-    }
+  /**
+   * Wraps a function that may throw an IO Exception throwing an {@code UncheckedIOException}.
+   *
+   * @param f the function
+   */
+  static <F, T> Function<F, T> asFunction(IOExceptionFunction<F, T> f) {
+    return i -> {
+      try {
+        return f.apply(i);
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+    };
+  }
 }

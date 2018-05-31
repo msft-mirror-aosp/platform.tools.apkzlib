@@ -16,23 +16,15 @@
 
 package com.android.tools.build.apkzlib.zip;
 
-/**
- * Constants used in tests.
- */
+/** Constants used in tests. */
 public interface ZFileTestConstants {
 
-    /**
-     * Number of bytes in a zip entry local header, not considering name and comment.
-     */
-    int LOCAL_HEADER_SIZE = 30;
+  /** Number of bytes in a zip entry local header, not considering name and comment. */
+  int LOCAL_HEADER_SIZE = 30;
 
-    /**
-     * Number of bytes in a zip central directory entry, not considering name and comment.
-     */
-    int CENTRAL_DIRECTORY_ENTRY_SIZE = 46;
+  /** Number of bytes in a zip central directory entry, not considering name and comment. */
+  int CENTRAL_DIRECTORY_ENTRY_SIZE = 46;
 
-    /**
-     * Number of bytes in an EOCD without comment.
-     */
-    int EOCD_SIZE = 22;
+  /** Number of bytes in an EOCD without comment. */
+  int EOCD_SIZE = 22;
 }

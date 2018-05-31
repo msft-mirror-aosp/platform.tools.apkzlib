@@ -29,7 +29,6 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
-import javax.annotation.Nonnull;
 import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -43,91 +42,92 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.Assume;
 
-/**
- * Utilities to use signatures in tests.
- */
+/** Utilities to use signatures in tests. */
 public class SignatureTestUtils {
 
-    /**
-     * Generates a private key / certificate for pre-18 systems.
-     *
-     * @return the pair with the private key and certificate
-     * @throws Exception failed to generate the signature data
-     */
-    @Nonnull
-    public static ApkZLibPair<PrivateKey, X509Certificate> generateSignaturePre18()
-            throws Exception {
-        return generateSignature("RSA", "SHA1withRSA");
+  /**
+   * Generates a private key / certificate for pre-18 systems.
+   *
+   * @return the pair with the private key and certificate
+   * @throws Exception failed to generate the signature data
+   */
+  public static ApkZLibPair<PrivateKey, X509Certificate> generateSignaturePre18() throws Exception {
+    return generateSignature("RSA", "SHA1withRSA");
+  }
+
+  /**
+   * Generates a private key / certificate for post-18 systems.
+   *
+   * @return the pair with the private key and certificate
+   * @throws Exception failed to generate the signature data
+   */
+  public static ApkZLibPair<PrivateKey, X509Certificate> generateSignaturePos18() throws Exception {
+    return generateSignature("EC", "SHA256withECDSA");
+  }
+
+  /**
+   * Generates a private key / certificate.
+   *
+   * @param sign the asymmetric cypher, <em>e.g.</em>, {@code RSA}
+   * @param full the full signature algorithm name, <em>e.g.</em>, {@code SHA1withRSA}
+   * @return the pair with the private key and certificate
+   * @throws Exception failed to generate the signature data
+   */
+  public static ApkZLibPair<PrivateKey, X509Certificate> generateSignature(String sign, String full)
+      throws Exception {
+    // http://stackoverflow.com/questions/28538785/
+    // easy-way-to-generate-a-self-signed-certificate-for-java-security-keystore-using
+
+    KeyPairGenerator generator = null;
+    try {
+      if (sign.equals("RSA")) {
+        generator = KeyPairGenerator.getInstance("TSA");
+      } else if (sign.equals("EC")) {
+        generator = KeyPairGenerator.getInstance("EC");
+
+      } else {
+        fail("Algorithm " + sign + " not supported.");
+      }
+    } catch (NoSuchAlgorithmException e) {
+      Assume.assumeNoException("Algorithm " + sign + " not supported.", e);
     }
 
-    /**
-     * Generates a private key / certificate for post-18 systems.
-     *
-     * @return the pair with the private key and certificate
-     * @throws Exception failed to generate the signature data
-     */
-    @Nonnull
-    public static ApkZLibPair<PrivateKey, X509Certificate> generateSignaturePos18()
-            throws Exception {
-        return generateSignature("EC", "SHA256withECDSA");
+    assertNotNull(generator);
+    KeyPair keyPair = generator.generateKeyPair();
+
+    Date notBefore = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000);
+    Date notAfter = new Date(System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000);
+
+    X500Name issuer = new X500Name(new X500Principal("cn=Myself").getName());
+
+    SubjectPublicKeyInfo publicKeyInfo;
+
+    if (keyPair.getPublic() instanceof RSAPublicKey) {
+      RSAPublicKey rsaPublicKey = (RSAPublicKey) keyPair.getPublic();
+      publicKeyInfo =
+          SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(
+              new RSAKeyParameters(
+                  false, rsaPublicKey.getModulus(), rsaPublicKey.getPublicExponent()));
+    } else if (keyPair.getPublic() instanceof ECPublicKey) {
+      publicKeyInfo = SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
+    } else {
+      fail();
+      publicKeyInfo = null;
     }
 
-    /**
-     * Generates a private key / certificate.
-     *
-     * @param sign the asymmetric cypher, <em>e.g.</em>, {@code RSA}
-     * @param full the full signature algorithm name, <em>e.g.</em>, {@code SHA1withRSA}
-     * @return the pair with the private key and certificate
-     * @throws Exception failed to generate the signature data
-     */
-    @Nonnull
-    public static ApkZLibPair<PrivateKey, X509Certificate> generateSignature(
-            @Nonnull String sign,
-            @Nonnull String full)
-            throws Exception {
-        // http://stackoverflow.com/questions/28538785/
-        // easy-way-to-generate-a-self-signed-certificate-for-java-security-keystore-using
+    X509v1CertificateBuilder builder =
+        new X509v1CertificateBuilder(
+            issuer, BigInteger.ONE, notBefore, notAfter, issuer, publicKeyInfo);
 
-        KeyPairGenerator generator = null;
-        try {
-            generator = KeyPairGenerator.getInstance(sign);
-        } catch (NoSuchAlgorithmException e) {
-            Assume.assumeNoException("Algorithm " + sign + " not supported.", e);
-        }
+    ContentSigner signer =
+        new JcaContentSignerBuilder(full)
+            .setProvider(new BouncyCastleProvider())
+            .build(keyPair.getPrivate());
+    X509CertificateHolder holder = builder.build(signer);
 
-        assertNotNull(generator);
-        KeyPair keyPair = generator.generateKeyPair();
+    JcaX509CertificateConverter converter =
+        new JcaX509CertificateConverter().setProvider(new BouncyCastleProvider());
 
-        Date notBefore = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000);
-        Date notAfter = new Date(System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000);
-
-        X500Name issuer = new X500Name(new X500Principal("cn=Myself").getName());
-
-        SubjectPublicKeyInfo publicKeyInfo;
-
-        if (keyPair.getPublic() instanceof RSAPublicKey) {
-            RSAPublicKey rsaPublicKey = (RSAPublicKey) keyPair.getPublic();
-            publicKeyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(
-                    new RSAKeyParameters(false, rsaPublicKey.getModulus(),
-                            rsaPublicKey.getPublicExponent()));
-        } else if (keyPair.getPublic() instanceof ECPublicKey) {
-            publicKeyInfo = SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
-        } else {
-            fail();
-            publicKeyInfo = null;
-        }
-
-        X509v1CertificateBuilder builder = new X509v1CertificateBuilder(issuer, BigInteger.ONE,
-                notBefore, notAfter, issuer, publicKeyInfo);
-
-        ContentSigner signer = new JcaContentSignerBuilder(full).setProvider(
-                new BouncyCastleProvider()).build(keyPair.getPrivate());
-        X509CertificateHolder holder = builder.build(signer);
-
-        JcaX509CertificateConverter converter = new JcaX509CertificateConverter()
-                .setProvider(new BouncyCastleProvider());
-
-        return new ApkZLibPair(keyPair.getPrivate(), converter.getCertificate(holder));
-    }
-
+    return new ApkZLibPair<>(keyPair.getPrivate(), converter.getCertificate(holder));
+  }
 }

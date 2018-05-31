@@ -14,7 +14,5 @@
  * limitations under the License.
  */
 
-/**
- * Utilities to work with {@code apkzlib}.
- */
+/** Utilities to work with {@code apkzlib}. */
 package com.android.tools.build.apkzlib.utils;

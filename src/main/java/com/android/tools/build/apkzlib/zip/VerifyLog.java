@@ -17,40 +17,38 @@
 package com.android.tools.build.apkzlib.zip;
 
 import com.google.common.collect.ImmutableList;
-import javax.annotation.Nonnull;
 
 /**
- * The verify log contains verification messages. It is used to capture validation issues with a
- * zip file or with parts of a zip file.
+ * The verify log contains verification messages. It is used to capture validation issues with a zip
+ * file or with parts of a zip file.
  */
 public interface VerifyLog {
 
-    /**
-     * Logs a message.
-     *
-     * @param message the message to verify
-     */
-    void log(@Nonnull String message);
+  /**
+   * Logs a message.
+   *
+   * @param message the message to verify
+   */
+  void log(String message);
 
-    /**
-     * Obtains all save logged messages.
-     *
-     * @return the logged messages
-     */
-    @Nonnull
-    ImmutableList<String> getLogs();
+  /**
+   * Obtains all save logged messages.
+   *
+   * @return the logged messages
+   */
+  ImmutableList<String> getLogs();
 
-    /**
-     * Performs verification of a non-critical condition, logging a message if the condition is
-     * not verified.
-     *
-     * @param condition the condition
-     * @param message the message to write if {@code condition} is {@code false}.
-     * @param args arguments for formatting {@code message} using {@code String.format}
-     */
-    default void verify(boolean condition, @Nonnull String message, @Nonnull Object... args) {
-        if (!condition) {
-            log(String.format(message, args));
-        }
+  /**
+   * Performs verification of a non-critical condition, logging a message if the condition is not
+   * verified.
+   *
+   * @param condition the condition
+   * @param message the message to write if {@code condition} is {@code false}.
+   * @param args arguments for formatting {@code message} using {@code String.format}
+   */
+  default void verify(boolean condition, String message, Object... args) {
+    if (!condition) {
+      log(String.format(message, args));
     }
+  }
 }

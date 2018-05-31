@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
-import javax.annotation.Nonnull;
 
 /**
  * Byte source that inflates another byte source. It assumed the inner byte source has deflated
@@ -31,34 +30,32 @@ import javax.annotation.Nonnull;
  */
 public class InflaterByteSource extends CloseableByteSource {
 
-    /**
-     * The stream factory for the deflated data.
+  /** The stream factory for the deflated data. */
+  private final CloseableByteSource deflatedSource;
+
+  /**
+   * Creates a new source.
+   *
+   * @param byteSource the factory for deflated data
+   */
+  public InflaterByteSource(CloseableByteSource byteSource) {
+    deflatedSource = byteSource;
+  }
+
+  @Override
+  public InputStream openStream() throws IOException {
+    /*
+     * The extra byte is a dummy byte required by the inflater. Weirdo.
+     * (see the java.util.Inflater documentation). Looks like a hack...
+     * "Oh, I need an extra dummy byte to allow for some... err... optimizations..."
      */
-    @Nonnull
-    private final CloseableByteSource deflatedSource;
+    ByteArrayInputStream hackByte = new ByteArrayInputStream(new byte[] {0});
+    return new InflaterInputStream(
+        new SequenceInputStream(deflatedSource.openStream(), hackByte), new Inflater(true));
+  }
 
-    /**
-     * Creates a new source.
-     * @param byteSource the factory for deflated data
-     */
-    public InflaterByteSource(@Nonnull CloseableByteSource byteSource) {
-        deflatedSource = byteSource;
-    }
-
-    @Override
-    public InputStream openStream() throws IOException {
-        /*
-         * The extra byte is a dummy byte required by the inflater. Weirdo.
-         * (see the java.util.Inflater documentation). Looks like a hack...
-         * "Oh, I need an extra dummy byte to allow for some... err... optimizations..."
-         */
-        ByteArrayInputStream hackByte = new ByteArrayInputStream(new byte[] { 0 });
-        return new InflaterInputStream(new SequenceInputStream(deflatedSource.openStream(),
-                hackByte), new Inflater(true));
-    }
-
-    @Override
-    public void innerClose() throws IOException {
-        deflatedSource.close();
-    }
+  @Override
+  public void innerClose() throws IOException {
+    deflatedSource.close();
+  }
 }

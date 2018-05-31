@@ -23,89 +23,94 @@ import static org.junit.Assert.fail;
 
 import java.util.function.Supplier;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class CachedSupplierTest {
 
-    @Test
-    public void testGetsOnlyOnce() {
-        TestSupplier ts = new TestSupplier();
-        CachedSupplier<String> cs = new CachedSupplier<>(ts);
-        assertFalse(cs.isValid());
+  @Test
+  public void testGetsOnlyOnce() {
+    TestSupplier ts = new TestSupplier();
+    CachedSupplier<String> cs = new CachedSupplier<>(ts);
+    assertFalse(cs.isValid());
 
-        ts.value = "foo";
-        assertEquals(0, ts.invocationCount);
-        assertEquals("foo", cs.get());
-        assertEquals(1, ts.invocationCount);
-        assertTrue(cs.isValid());
+    ts.value = "foo";
+    assertEquals(0, ts.invocationCount);
+    assertEquals("foo", cs.get());
+    assertEquals(1, ts.invocationCount);
+    assertTrue(cs.isValid());
 
-        ts.value = "bar";
-        assertEquals("foo", cs.get());
-        assertEquals(1, ts.invocationCount);
-        assertTrue(cs.isValid());
+    ts.value = "bar";
+    assertEquals("foo", cs.get());
+    assertEquals(1, ts.invocationCount);
+    assertTrue(cs.isValid());
+  }
+
+  @Test
+  public void cacheCanBePreset() {
+    TestSupplier ts = new TestSupplier();
+    ts.value = "foo";
+    CachedSupplier<String> cs = new CachedSupplier<>(ts);
+    cs.precomputed("bar");
+    assertTrue(cs.isValid());
+
+    assertEquals("bar", cs.get());
+    assertEquals(0, ts.invocationCount);
+  }
+
+  @Test
+  public void exceptionThrownBySupplier() {
+    CachedSupplier<String> cs =
+        new CachedSupplier<>(
+            () -> {
+              throw new RuntimeException("foo");
+            });
+    assertFalse(cs.isValid());
+
+    try {
+      cs.get();
+      fail();
+    } catch (RuntimeException e) {
+      assertEquals("foo", e.getMessage());
     }
 
-    @Test
-    public void cacheCanBePreset() {
-        TestSupplier ts = new TestSupplier();
-        ts.value = "foo";
-        CachedSupplier<String> cs = new CachedSupplier<>(ts);
-        cs.precomputed("bar");
-        assertTrue(cs.isValid());
+    assertFalse(cs.isValid());
 
-        assertEquals("bar", cs.get());
-        assertEquals(0, ts.invocationCount);
+    try {
+      cs.get();
+      fail();
+    } catch (RuntimeException e) {
+      assertEquals("foo", e.getMessage());
     }
+  }
 
-    @Test
-    public void exceptionThrownBySupplier() {
-        CachedSupplier<String> cs = new CachedSupplier<>(() -> {
-            throw new RuntimeException("foo");
-        });
-        assertFalse(cs.isValid());
+  @Test
+  public void reset() {
+    TestSupplier ts = new TestSupplier();
+    ts.value = "foo";
+    CachedSupplier<String> cs = new CachedSupplier<>(ts);
+    assertFalse(cs.isValid());
 
-        try {
-            cs.get();
-            fail();
-        } catch (RuntimeException e) {
-            assertEquals("foo", e.getMessage());
-        }
+    assertEquals("foo", cs.get());
+    assertEquals(1, ts.invocationCount);
+    assertTrue(cs.isValid());
+    ts.value = "bar";
 
-        assertFalse(cs.isValid());
+    cs.reset();
+    assertFalse(cs.isValid());
+    assertEquals("bar", cs.get());
+    assertEquals(2, ts.invocationCount);
+  }
 
-        try {
-            cs.get();
-            fail();
-        } catch (RuntimeException e) {
-            assertEquals("foo", e.getMessage());
-        }
+  static class TestSupplier implements Supplier<String> {
+    int invocationCount = 0;
+    String value;
+
+    @Override
+    public String get() {
+      invocationCount++;
+      return value;
     }
-
-    @Test
-    public void reset() {
-        TestSupplier ts = new TestSupplier();
-        ts.value = "foo";
-        CachedSupplier<String> cs = new CachedSupplier<>(ts);
-        assertFalse(cs.isValid());
-
-        assertEquals("foo", cs.get());
-        assertEquals(1, ts.invocationCount);
-        assertTrue(cs.isValid());
-        ts.value = "bar";
-
-        cs.reset();
-        assertFalse(cs.isValid());
-        assertEquals("bar", cs.get());
-        assertEquals(2, ts.invocationCount);
-    }
-
-    static class TestSupplier implements Supplier<String> {
-        int invocationCount = 0;
-        String value;
-
-        @Override
-        public String get() {
-            invocationCount++;
-            return value;
-        }
-    }
+  }
 }

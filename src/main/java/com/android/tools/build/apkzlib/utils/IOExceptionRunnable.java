@@ -18,34 +18,30 @@ package com.android.tools.build.apkzlib.utils;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import javax.annotation.Nonnull;
 
-/**
- * Runnable that can throw I/O exceptions.
- */
+/** Runnable that can throw I/O exceptions. */
 @FunctionalInterface
 public interface IOExceptionRunnable {
 
-    /**
-     * Runs the runnable.
-     *
-     * @throws IOException failed to run
-     */
-    void run() throws IOException;
+  /**
+   * Runs the runnable.
+   *
+   * @throws IOException failed to run
+   */
+  void run() throws IOException;
 
-    /**
-     * Wraps a runnable that may throw an IO Exception throwing an {@code UncheckedIOException}.
-     *
-     * @param r the runnable
-     */
-    @Nonnull
-    public static Runnable asRunnable(@Nonnull IOExceptionRunnable r) {
-        return () -> {
-            try {
-                r.run();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        };
-    }
+  /**
+   * Wraps a runnable that may throw an IO Exception throwing an {@code UncheckedIOException}.
+   *
+   * @param r the runnable
+   */
+  public static Runnable asRunnable(IOExceptionRunnable r) {
+    return () -> {
+      try {
+        r.run();
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+    };
+  }
 }

@@ -16,29 +16,23 @@
 
 package com.android.tools.build.apkzlib.utils;
 
-/**
- * Pair implementation to use with the {@code apkzlib} library.
- */
+/** Pair implementation to use with the {@code apkzlib} library. */
 public class ApkZLibPair<T1, T2> {
 
-    /**
-     * First value.
-     */
-    public T1 v1;
+  /** First value. */
+  public T1 v1;
 
-    /**
-     * Second value.
-     */
-    public T2 v2;
+  /** Second value. */
+  public T2 v2;
 
-    /**
-     * Creates a new pair.
-     *
-     * @param v1 the first value
-     * @param v2 the second value
-     */
-    public ApkZLibPair(T1 v1, T2 v2) {
-        this.v1 = v1;
-        this.v2 = v2;
-    }
+  /**
+   * Creates a new pair.
+   *
+   * @param v1 the first value
+   * @param v2 the second value
+   */
+  public ApkZLibPair(T1 v1, T2 v2) {
+    this.v1 = v1;
+    this.v2 = v2;
+  }
 }

@@ -22,118 +22,113 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
-import javax.annotation.Nonnull;
 
-/**
- * Utilities to encode and decode file names in zips.
- */
+/** Utilities to encode and decode file names in zips. */
 public class EncodeUtils {
 
-    /**
-     * Utility class: no constructor.
+  /** Utility class: no constructor. */
+  private EncodeUtils() {
+    /*
+     * Nothing to do.
      */
-    private EncodeUtils() {
-        /*
-         * Nothing to do.
-         */
+  }
+
+  /**
+   * Decodes a file name.
+   *
+   * @param bytes the raw data buffer to read from
+   * @param length the number of bytes in the raw data buffer containing the string to decode
+   * @param flags the zip entry flags
+   * @return the decode file name
+   */
+  public static String decode(ByteBuffer bytes, int length, GPFlags flags) throws IOException {
+    if (bytes.remaining() < length) {
+      throw new IOException(
+          "Only "
+              + bytes.remaining()
+              + " bytes exist in the buffer, but "
+              + "length is "
+              + length
+              + ".");
     }
 
-    /**
-     * Decodes a file name.
-     *
-     * @param bytes the raw data buffer to read from
-     * @param length the number of bytes in the raw data buffer containing the string to decode
-     * @param flags the zip entry flags
-     * @return the decode file name
-     */
-    @Nonnull
-    public static String decode(@Nonnull ByteBuffer bytes, int length, @Nonnull GPFlags flags)
-            throws IOException {
-        if (bytes.remaining() < length) {
-            throw new IOException("Only " + bytes.remaining() + " bytes exist in the buffer, but "
-                    + "length is " + length + ".");
-        }
+    byte[] stringBytes = new byte[length];
+    bytes.get(stringBytes);
+    return decode(stringBytes, flags);
+  }
 
-        byte[] stringBytes = new byte[length];
-        bytes.get(stringBytes);
-        return decode(stringBytes, flags);
-    }
+  /**
+   * Decodes a file name.
+   *
+   * @param data the raw data
+   * @param flags the zip entry flags
+   * @return the decode file name
+   */
+  public static String decode(byte[] data, GPFlags flags) {
+    return decode(data, flagsCharset(flags));
+  }
 
-    /**
-     * Decodes a file name.
-     *
-     * @param data the raw data
-     * @param flags the zip entry flags
-     * @return the decode file name
-     */
-    @Nonnull
-    public static String decode(@Nonnull byte[] data, @Nonnull GPFlags flags) {
-        return decode(data, flagsCharset(flags));
+  /**
+   * Decodes a file name.
+   *
+   * @param data the raw data
+   * @param charset the charset to use
+   * @return the decode file name
+   */
+  private static String decode(byte[] data, Charset charset) {
+    try {
+      return charset
+          .newDecoder()
+          .onMalformedInput(CodingErrorAction.REPORT)
+          .decode(ByteBuffer.wrap(data))
+          .toString();
+    } catch (CharacterCodingException e) {
+      // If we're trying to decode ASCII, try UTF-8. Otherwise, revert to the default
+      // behavior (usually replacing invalid characters).
+      if (charset.equals(Charsets.US_ASCII)) {
+        return decode(data, Charsets.UTF_8);
+      } else {
+        return charset.decode(ByteBuffer.wrap(data)).toString();
+      }
     }
+  }
 
-    /**
-     * Decodes a file name.
-     *
-     * @param data the raw data
-     * @param charset the charset to use
-     * @return the decode file name
-     */
-    @Nonnull
-    private static String decode(@Nonnull byte[] data, @Nonnull Charset charset) {
-        try {
-            return charset.newDecoder()
-                    .onMalformedInput(CodingErrorAction.REPORT)
-                    .decode(ByteBuffer.wrap(data))
-                    .toString();
-        } catch (CharacterCodingException e) {
-            // If we're trying to decode ASCII, try UTF-8. Otherwise, revert to the default
-            // behavior (usually replacing invalid characters).
-            if (charset.equals(Charsets.US_ASCII)) {
-                return decode(data, Charsets.UTF_8);
-            } else {
-                return charset.decode(ByteBuffer.wrap(data)).toString();
-            }
-        }
-    }
+  /**
+   * Encodes a file name.
+   *
+   * @param name the name to encode
+   * @param flags the zip entry flags
+   * @return the encoded file name
+   */
+  public static byte[] encode(String name, GPFlags flags) {
+    Charset charset = flagsCharset(flags);
+    ByteBuffer bytes = charset.encode(name);
+    byte[] result = new byte[bytes.remaining()];
+    bytes.get(result);
+    return result;
+  }
 
-    /**
-     * Encodes a file name.
-     *
-     * @param name the name to encode
-     * @param flags the zip entry flags
-     * @return the encoded file name
-     */
-    @Nonnull
-    public static byte[] encode(@Nonnull String name, @Nonnull GPFlags flags) {
-        Charset charset = flagsCharset(flags);
-        ByteBuffer bytes = charset.encode(name);
-        byte[] result = new byte[bytes.remaining()];
-        bytes.get(result);
-        return result;
+  /**
+   * Obtains the charset to encode and decode zip entries, given a set of flags.
+   *
+   * @param flags the flags
+   * @return the charset to use
+   */
+  private static Charset flagsCharset(GPFlags flags) {
+    if (flags.isUtf8FileName()) {
+      return Charsets.UTF_8;
+    } else {
+      return Charsets.US_ASCII;
     }
+  }
 
-    /**
-     * Obtains the charset to encode and decode zip entries, given a set of flags.
-     *
-     * @param flags the flags
-     * @return the charset to use
-     */
-    @Nonnull
-    private static Charset flagsCharset(@Nonnull GPFlags flags) {
-        if (flags.isUtf8FileName()) {
-            return Charsets.UTF_8;
-        } else {
-            return Charsets.US_ASCII;
-        }
-    }
-
-    /**
-     * Checks if some text may be encoded using ASCII.
-     *
-     * @param text the text to check
-     * @return can it be encoded using ASCII?
-     */
-    public static boolean canAsciiEncode(String text) {
-        return Charsets.US_ASCII.newEncoder().canEncode(text);
-    }
+  /**
+   * Checks if some text may be encoded using ASCII.
+   *
+   * @param text the text to check
+   * @return can it be encoded using ASCII?
+   */
+  public static boolean canAsciiEncode(String text) {
+    return Charsets.US_ASCII.newEncoder().canEncode(text);
+  }
 }

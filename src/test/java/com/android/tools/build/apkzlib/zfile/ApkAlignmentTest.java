@@ -31,201 +31,196 @@ import java.nio.file.Files;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class ApkAlignmentTest {
-    @Rule public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
+  @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    @Test
-    public void soFilesUncompressedAndAligned() throws Exception {
-        File apk = new File(mTemporaryFolder.getRoot(), "a.apk");
+  @Test
+  public void soFilesUncompressedAndAligned() throws Exception {
+    File apk = new File(temporaryFolder.getRoot(), "a.apk");
 
-        File soFile = new File(mTemporaryFolder.getRoot(), "doesnt_work.so");
-        Files.write(soFile.toPath(), new byte[500]);
+    File soFile = new File(temporaryFolder.getRoot(), "doesnt_work.so");
+    Files.write(soFile.toPath(), new byte[500]);
 
-        ApkZFileCreatorFactory cf = new ApkZFileCreatorFactory(new ZFileOptions());
-        ApkCreatorFactory.CreationData creationData =
-                new ApkCreatorFactory.CreationData(
-                        apk,
-                        null,
-                        null,
-                        false,
-                        false,
-                        null,
-                        null,
-                        20,
-                        NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED,
-                        path -> false);
+    ApkZFileCreatorFactory cf = new ApkZFileCreatorFactory(new ZFileOptions());
+    ApkCreatorFactory.CreationData creationData =
+        new ApkCreatorFactory.CreationData(
+            apk,
+            null,
+            null,
+            false,
+            false,
+            null,
+            null,
+            20,
+            NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED,
+            path -> false);
 
-        ApkCreator creator = cf.make(creationData);
-
-        creator.writeFile(soFile, "/doesnt_work.so");
-        creator.close();
-
-        try (ZFile zf = new ZFile(apk)) {
-            StoredEntry soEntry = zf.get("/doesnt_work.so");
-            assertNotNull(soEntry);
-            assertEquals(
-                    CompressionMethod.STORE,
-                    soEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
-            long offset =
-                    soEntry.getCentralDirectoryHeader().getOffset() + soEntry.getLocalHeaderSize();
-            assertTrue(offset % 4096 == 0);
-        }
+    try (ApkCreator creator = cf.make(creationData)) {
+      creator.writeFile(soFile, "/doesnt_work.so");
     }
 
-    @Test
-    public void soFilesMergedFromZipsCanBeUncompressedAndAligned() throws Exception {
+    try (ZFile zf = new ZFile(apk)) {
+      StoredEntry soEntry = zf.get("/doesnt_work.so");
+      assertNotNull(soEntry);
+      assertEquals(
+          CompressionMethod.STORE,
+          soEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
+      long offset = soEntry.getCentralDirectoryHeader().getOffset() + soEntry.getLocalHeaderSize();
+      assertEquals(0, offset % 4096);
+    }
+  }
 
-        // Create a zip file with a compressed, unaligned so file.
-        File zipToMerge = new File(mTemporaryFolder.getRoot(), "a.zip");
-        try (ZFile zf = new ZFile(zipToMerge)) {
-            zf.add("/zero.so", new ByteArrayInputStream(new byte[500]));
-        }
+  @Test
+  public void soFilesMergedFromZipsCanBeUncompressedAndAligned() throws Exception {
 
-        try (ZFile zf = new ZFile(zipToMerge)) {
-            StoredEntry zeroSo = zf.get("/zero.so");
-            assertNotNull(zeroSo);
-            assertEquals(
-                    CompressionMethod.DEFLATE,
-                    zeroSo.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
-            long offset =
-                    zeroSo.getCentralDirectoryHeader().getOffset() + zeroSo.getLocalHeaderSize();
-            assertFalse(offset % 4096 == 0);
-        }
-
-        // Create an APK and merge the zip file.
-        File apk = new File(mTemporaryFolder.getRoot(), "b.apk");
-        ApkZFileCreatorFactory cf = new ApkZFileCreatorFactory(new ZFileOptions());
-        ApkCreatorFactory.CreationData creationData =
-                new ApkCreatorFactory.CreationData(
-                        apk,
-                        null,
-                        null,
-                        false,
-                        false,
-                        null,
-                        null,
-                        20,
-                        NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED,
-                        path -> false);
-
-        try (ApkCreator creator = cf.make(creationData)) {
-            creator.writeZip(zipToMerge, null, null);
-        }
-
-        // Make sure the file is uncompressed and aligned.
-        try (ZFile zf = new ZFile(apk)) {
-            StoredEntry soEntry = zf.get("/zero.so");
-            assertNotNull(soEntry);
-            assertEquals(
-                    CompressionMethod.STORE,
-                    soEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
-            long offset =
-                    soEntry.getCentralDirectoryHeader().getOffset() + soEntry.getLocalHeaderSize();
-            assertTrue(offset % 4096 == 0);
-
-            byte[] data = soEntry.read();
-            assertEquals(500, data.length);
-            for (int i = 0; i < data.length; i++) {
-                assertEquals(0, data[i]);
-            }
-        }
+    // Create a zip file with a compressed, unaligned so file.
+    File zipToMerge = new File(temporaryFolder.getRoot(), "a.zip");
+    try (ZFile zf = new ZFile(zipToMerge)) {
+      zf.add("/zero.so", new ByteArrayInputStream(new byte[500]));
     }
 
-    @Test
-    public void soFilesUncompressedAndNotAligned() throws Exception {
-        File apk = new File(mTemporaryFolder.getRoot(), "a.apk");
-
-        File soFile = new File(mTemporaryFolder.getRoot(), "doesnt_work.so");
-        Files.write(soFile.toPath(), new byte[500]);
-
-        ApkZFileCreatorFactory cf = new ApkZFileCreatorFactory(new ZFileOptions());
-        ApkCreatorFactory.CreationData creationData =
-                new ApkCreatorFactory.CreationData(
-                        apk,
-                        null,
-                        null,
-                        false,
-                        false,
-                        null,
-                        null,
-                        20,
-                        NativeLibrariesPackagingMode.COMPRESSED,
-                        path -> false);
-
-        ApkCreator creator = cf.make(creationData);
-
-        creator.writeFile(soFile, "/doesnt_work.so");
-        creator.close();
-
-        try (ZFile zf = new ZFile(apk)) {
-            StoredEntry soEntry = zf.get("/doesnt_work.so");
-            assertNotNull(soEntry);
-            assertEquals(
-                    CompressionMethod.DEFLATE,
-                    soEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
-            long offset =
-                    soEntry.getCentralDirectoryHeader().getOffset() + soEntry.getLocalHeaderSize();
-            assertTrue(offset % 4096 != 0);
-        }
+    try (ZFile zf = new ZFile(zipToMerge)) {
+      StoredEntry zeroSo = zf.get("/zero.so");
+      assertNotNull(zeroSo);
+      assertEquals(
+          CompressionMethod.DEFLATE,
+          zeroSo.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
+      long offset = zeroSo.getCentralDirectoryHeader().getOffset() + zeroSo.getLocalHeaderSize();
+      assertFalse(offset % 4096 == 0);
     }
 
-    @Test
-    public void soFilesMergedFromZipsCanBeUncompressedAndNotAligned() throws Exception {
+    // Create an APK and merge the zip file.
+    File apk = new File(temporaryFolder.getRoot(), "b.apk");
+    ApkZFileCreatorFactory cf = new ApkZFileCreatorFactory(new ZFileOptions());
+    ApkCreatorFactory.CreationData creationData =
+        new ApkCreatorFactory.CreationData(
+            apk,
+            null,
+            null,
+            false,
+            false,
+            null,
+            null,
+            20,
+            NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED,
+            path -> false);
 
-        // Create a zip file with a compressed, unaligned so file.
-        File zipToMerge = new File(mTemporaryFolder.getRoot(), "a.zip");
-        try (ZFile zf = new ZFile(zipToMerge)) {
-            zf.add("/zero.so", new ByteArrayInputStream(new byte[500]));
-        }
-
-        try (ZFile zf = new ZFile(zipToMerge)) {
-            StoredEntry zeroSo = zf.get("/zero.so");
-            assertNotNull(zeroSo);
-            assertEquals(
-                    CompressionMethod.DEFLATE,
-                    zeroSo.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
-            long offset =
-                    zeroSo.getCentralDirectoryHeader().getOffset() + zeroSo.getLocalHeaderSize();
-            assertFalse(offset % 4096 == 0);
-        }
-
-        // Create an APK and merge the zip file.
-        File apk = new File(mTemporaryFolder.getRoot(), "b.apk");
-        ApkZFileCreatorFactory cf = new ApkZFileCreatorFactory(new ZFileOptions());
-        ApkCreatorFactory.CreationData creationData =
-                new ApkCreatorFactory.CreationData(
-                        apk,
-                        null,
-                        null,
-                        false,
-                        false,
-                        null,
-                        null,
-                        20,
-                        NativeLibrariesPackagingMode.COMPRESSED,
-                        path -> false);
-
-        try (ApkCreator creator = cf.make(creationData)) {
-            creator.writeZip(zipToMerge, null, null);
-        }
-
-        // Make sure the file is uncompressed and aligned.
-        try (ZFile zf = new ZFile(apk)) {
-            StoredEntry soEntry = zf.get("/zero.so");
-            assertNotNull(soEntry);
-            assertEquals(
-                    CompressionMethod.DEFLATE,
-                    soEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
-            long offset =
-                    soEntry.getCentralDirectoryHeader().getOffset() + soEntry.getLocalHeaderSize();
-            assertTrue(offset % 4096 != 0);
-
-            byte[] data = soEntry.read();
-            assertEquals(500, data.length);
-            for (int i = 0; i < data.length; i++) {
-                assertEquals(0, data[i]);
-            }
-        }
+    try (ApkCreator creator = cf.make(creationData)) {
+      creator.writeZip(zipToMerge, null, null);
     }
+
+    // Make sure the file is uncompressed and aligned.
+    try (ZFile zf = new ZFile(apk)) {
+      StoredEntry soEntry = zf.get("/zero.so");
+      assertNotNull(soEntry);
+      assertEquals(
+          CompressionMethod.STORE,
+          soEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
+      long offset = soEntry.getCentralDirectoryHeader().getOffset() + soEntry.getLocalHeaderSize();
+      assertEquals(0, offset % 4096);
+
+      byte[] data = soEntry.read();
+      assertEquals(500, data.length);
+      for (int i = 0; i < data.length; i++) {
+        assertEquals(0, data[i]);
+      }
+    }
+  }
+
+  @Test
+  public void soFilesUncompressedAndNotAligned() throws Exception {
+    File apk = new File(temporaryFolder.getRoot(), "a.apk");
+
+    File soFile = new File(temporaryFolder.getRoot(), "doesnt_work.so");
+    Files.write(soFile.toPath(), new byte[500]);
+
+    ApkZFileCreatorFactory cf = new ApkZFileCreatorFactory(new ZFileOptions());
+    ApkCreatorFactory.CreationData creationData =
+        new ApkCreatorFactory.CreationData(
+            apk,
+            null,
+            null,
+            false,
+            false,
+            null,
+            null,
+            20,
+            NativeLibrariesPackagingMode.COMPRESSED,
+            path -> false);
+
+    try (ApkCreator creator = cf.make(creationData)) {
+      creator.writeFile(soFile, "/doesnt_work.so");
+    }
+
+    try (ZFile zf = new ZFile(apk)) {
+      StoredEntry soEntry = zf.get("/doesnt_work.so");
+      assertNotNull(soEntry);
+      assertEquals(
+          CompressionMethod.DEFLATE,
+          soEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
+      long offset = soEntry.getCentralDirectoryHeader().getOffset() + soEntry.getLocalHeaderSize();
+      assertTrue(offset % 4096 != 0);
+    }
+  }
+
+  @Test
+  public void soFilesMergedFromZipsCanBeUncompressedAndNotAligned() throws Exception {
+
+    // Create a zip file with a compressed, unaligned so file.
+    File zipToMerge = new File(temporaryFolder.getRoot(), "a.zip");
+    try (ZFile zf = new ZFile(zipToMerge)) {
+      zf.add("/zero.so", new ByteArrayInputStream(new byte[500]));
+    }
+
+    try (ZFile zf = new ZFile(zipToMerge)) {
+      StoredEntry zeroSo = zf.get("/zero.so");
+      assertNotNull(zeroSo);
+      assertEquals(
+          CompressionMethod.DEFLATE,
+          zeroSo.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
+      long offset = zeroSo.getCentralDirectoryHeader().getOffset() + zeroSo.getLocalHeaderSize();
+      assertFalse(offset % 4096 == 0);
+    }
+
+    // Create an APK and merge the zip file.
+    File apk = new File(temporaryFolder.getRoot(), "b.apk");
+    ApkZFileCreatorFactory cf = new ApkZFileCreatorFactory(new ZFileOptions());
+    ApkCreatorFactory.CreationData creationData =
+        new ApkCreatorFactory.CreationData(
+            apk,
+            null,
+            null,
+            false,
+            false,
+            null,
+            null,
+            20,
+            NativeLibrariesPackagingMode.COMPRESSED,
+            path -> false);
+
+    try (ApkCreator creator = cf.make(creationData)) {
+      creator.writeZip(zipToMerge, null, null);
+    }
+
+    // Make sure the file is uncompressed and aligned.
+    try (ZFile zf = new ZFile(apk)) {
+      StoredEntry soEntry = zf.get("/zero.so");
+      assertNotNull(soEntry);
+      assertEquals(
+          CompressionMethod.DEFLATE,
+          soEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
+      long offset = soEntry.getCentralDirectoryHeader().getOffset() + soEntry.getLocalHeaderSize();
+      assertTrue(offset % 4096 != 0);
+
+      byte[] data = soEntry.read();
+      assertEquals(500, data.length);
+      for (int i = 0; i < data.length; i++) {
+        assertEquals(0, data[i]);
+      }
+    }
+  }
 }

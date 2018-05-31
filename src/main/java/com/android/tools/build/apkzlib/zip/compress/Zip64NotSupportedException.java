@@ -21,7 +21,7 @@ import java.io.IOException;
 /** Exception raised by ZFile when encountering unsupported Zip64 format jar files. */
 public class Zip64NotSupportedException extends IOException {
 
-    public Zip64NotSupportedException(String message) {
-        super(message);
-    }
+  public Zip64NotSupportedException(String message) {
+    super(message);
+  }
 }

@@ -16,32 +16,28 @@
 
 package com.android.tools.build.apkzlib.zip;
 
-/**
- * Invariant checking a zip field does not exceed a threshold.
- */
+/** Invariant checking a zip field does not exceed a threshold. */
 class ZipFieldInvariantMaxValue implements ZipFieldInvariant {
 
-    /**
-     * The maximum value allowed.
-     */
-    private long max;
+  /** The maximum value allowed. */
+  private long max;
 
-    /**
-     * Creates a new invariant.
-     *
-     * @param max the maximum value allowed for the field
-     */
-    ZipFieldInvariantMaxValue(int max) {
-        this.max = max;
-    }
+  /**
+   * Creates a new invariant.
+   *
+   * @param max the maximum value allowed for the field
+   */
+  ZipFieldInvariantMaxValue(int max) {
+    this.max = max;
+  }
 
-    @Override
-    public boolean isValid(long value) {
-        return value <= max;
-    }
+  @Override
+  public boolean isValid(long value) {
+    return value <= max;
+  }
 
-    @Override
-    public String getName() {
-        return "Maximum value " + max;
-    }
+  @Override
+  public String getName() {
+    return "Maximum value " + max;
+  }
 }

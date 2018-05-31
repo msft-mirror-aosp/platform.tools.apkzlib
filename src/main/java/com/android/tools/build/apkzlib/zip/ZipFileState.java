@@ -16,22 +16,14 @@
 
 package com.android.tools.build.apkzlib.zip;
 
-/**
- * The {@code ZipFileState} enumeration holds the state of a {@link ZFile}.
- */
+/** The {@code ZipFileState} enumeration holds the state of a {@link ZFile}. */
 enum ZipFileState {
-    /**
-     * Zip file is closed.
-     */
-    CLOSED,
+  /** Zip file is closed. */
+  CLOSED,
 
-    /**
-     * File file is open in read-only mode.
-     */
-    OPEN_RO,
+  /** File file is open in read-only mode. */
+  OPEN_RO,
 
-    /**
-     * File file is open in read-write mode.
-     */
-    OPEN_RW
+  /** File file is open in read-write mode. */
+  OPEN_RW
 }

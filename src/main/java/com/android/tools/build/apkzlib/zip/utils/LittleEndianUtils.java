@@ -21,109 +21,97 @@ import com.google.common.base.Verify;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import javax.annotation.Nonnull;
 
 /**
- * Utilities to read and write 16 and 32 bit integers with support for little-endian
- * encoding, as used in zip files. Zip files actually use unsigned data types. We use Java's native
- * (signed) data types but will use long (64 bit) to ensure we can fit the whole range.
+ * Utilities to read and write 16 and 32 bit integers with support for little-endian encoding, as
+ * used in zip files. Zip files actually use unsigned data types. We use Java's native (signed) data
+ * types but will use long (64 bit) to ensure we can fit the whole range.
  */
 public class LittleEndianUtils {
-    /**
-     * Utility class, no constructor.
-     */
-    private LittleEndianUtils() {
+  /** Utility class, no constructor. */
+  private LittleEndianUtils() {}
+
+  /**
+   * Reads 4 bytes in little-endian format and converts them into a 32-bit value.
+   *
+   * @param bytes from where should the bytes be read; the first 4 bytes of the source will be read
+   * @return the 32-bit value
+   * @throws IOException failed to read the value
+   */
+  public static long readUnsigned4Le(ByteBuffer bytes) throws IOException {
+    Preconditions.checkNotNull(bytes, "bytes == null");
+
+    if (bytes.remaining() < 4) {
+      throw new EOFException(
+          "Not enough data: 4 bytes expected, " + bytes.remaining() + " available.");
     }
 
-    /**
-     * Reads 4 bytes in little-endian format and converts them into a 32-bit value.
-     *
-     * @param bytes from where should the bytes be read; the first 4 bytes of the source will be
-     * read
-     * @return the 32-bit value
-     * @throws IOException failed to read the value
-     */
-    public static long readUnsigned4Le(@Nonnull ByteBuffer bytes) throws IOException {
-        Preconditions.checkNotNull(bytes, "bytes == null");
+    byte b0 = bytes.get();
+    byte b1 = bytes.get();
+    byte b2 = bytes.get();
+    byte b3 = bytes.get();
+    long r = (b0 & 0xff) | ((b1 & 0xff) << 8) | ((b2 & 0xff) << 16) | ((b3 & 0xffL) << 24);
+    Verify.verify(r >= 0);
+    Verify.verify(r <= 0x00000000ffffffffL);
+    return r;
+  }
 
-        if (bytes.remaining() < 4) {
-            throw new EOFException("Not enough data: 4 bytes expected, " + bytes.remaining()
-                    + " available.");
-        }
+  /**
+   * Reads 2 bytes in little-endian format and converts them into a 16-bit value.
+   *
+   * @param bytes from where should the bytes be read; the first 2 bytes of the source will be read
+   * @return the 16-bit value
+   * @throws IOException failed to read the value
+   */
+  public static int readUnsigned2Le(ByteBuffer bytes) throws IOException {
+    Preconditions.checkNotNull(bytes, "bytes == null");
 
-        byte b0 = bytes.get();
-        byte b1 = bytes.get();
-        byte b2 = bytes.get();
-        byte b3 = bytes.get();
-        long r = (b0 & 0xff) | ((b1 & 0xff) << 8) | ((b2 & 0xff) << 16) | ((b3 & 0xffL) << 24);
-        Verify.verify(r >= 0);
-        Verify.verify(r <= 0x00000000ffffffffL);
-        return r;
+    if (bytes.remaining() < 2) {
+      throw new EOFException(
+          "Not enough data: 2 bytes expected, " + bytes.remaining() + " available.");
     }
 
-    /**
-     * Reads 2 bytes in little-endian format and converts them into a 16-bit value.
-     *
-     * @param bytes from where should the bytes be read; the first 2 bytes of the source will be
-     * read
-     * @return the 16-bit value
-     * @throws IOException failed to read the value
-     */
-    public static int readUnsigned2Le(@Nonnull ByteBuffer bytes) throws IOException {
-        Preconditions.checkNotNull(bytes, "bytes == null");
+    byte b0 = bytes.get();
+    byte b1 = bytes.get();
+    int r = (b0 & 0xff) | ((b1 & 0xff) << 8);
 
-        if (bytes.remaining() < 2) {
-            throw new EOFException(
-                    "Not enough data: 2 bytes expected, "
-                            + bytes.remaining()
-                            + " available.");
-        }
+    Verify.verify(r >= 0);
+    Verify.verify(r <= 0x0000ffff);
+    return r;
+  }
 
-        byte b0 = bytes.get();
-        byte b1 = bytes.get();
-        int r = (b0 & 0xff) | ((b1 & 0xff) << 8);
+  /**
+   * Writes 4 bytes in little-endian format, converting them from a 32-bit value.
+   *
+   * @param output the output stream where the bytes will be written
+   * @param value the 32-bit value to convert
+   * @throws IOException failed to write the value data
+   */
+  public static void writeUnsigned4Le(ByteBuffer output, long value) throws IOException {
+    Preconditions.checkNotNull(output, "output == null");
+    Preconditions.checkArgument(value >= 0, "value (%s) < 0", value);
+    Preconditions.checkArgument(
+        value <= 0x00000000ffffffffL, "value (%s) > 0x00000000ffffffffL", value);
 
-        Verify.verify(r >= 0);
-        Verify.verify(r <= 0x0000ffff);
-        return r;
-    }
+    output.put((byte) (value & 0xff));
+    output.put((byte) ((value >> 8) & 0xff));
+    output.put((byte) ((value >> 16) & 0xff));
+    output.put((byte) ((value >> 24) & 0xff));
+  }
 
-    /**
-     * Writes 4 bytes in little-endian format, converting them from a 32-bit value.
-     *
-     * @param output the output stream where the bytes will be written
-     * @param value the 32-bit value to convert
-     * @throws IOException failed to write the value data
-     */
-    public static void writeUnsigned4Le(@Nonnull ByteBuffer output, long value)
-            throws IOException {
-        Preconditions.checkNotNull(output, "output == null");
-        Preconditions.checkArgument(value >= 0, "value (%s) < 0", value);
-        Preconditions.checkArgument(
-                value <= 0x00000000ffffffffL,
-                "value (%s) > 0x00000000ffffffffL",
-                value);
+  /**
+   * Writes 2 bytes in little-endian format, converting them from a 16-bit value.
+   *
+   * @param output the output stream where the bytes will be written
+   * @param value the 16-bit value to convert
+   * @throws IOException failed to write the value data
+   */
+  public static void writeUnsigned2Le(ByteBuffer output, int value) throws IOException {
+    Preconditions.checkNotNull(output, "output == null");
+    Preconditions.checkArgument(value >= 0, "value (%s) < 0", value);
+    Preconditions.checkArgument(value <= 0x0000ffff, "value (%s) > 0x0000ffff", value);
 
-        output.put((byte) (value & 0xff));
-        output.put((byte) ((value >> 8) & 0xff));
-        output.put((byte) ((value >> 16) & 0xff));
-        output.put((byte) ((value >> 24) & 0xff));
-    }
-
-    /**
-     * Writes 2 bytes in little-endian format, converting them from a 16-bit value.
-     *
-     * @param output the output stream where the bytes will be written
-     * @param value the 16-bit value to convert
-     * @throws IOException failed to write the value data
-     */
-    public static void writeUnsigned2Le(@Nonnull ByteBuffer output, int value)
-            throws IOException {
-        Preconditions.checkNotNull(output, "output == null");
-        Preconditions.checkArgument(value >= 0, "value (%s) < 0", value);
-        Preconditions.checkArgument(value <= 0x0000ffff, "value (%s) > 0x0000ffff", value);
-
-        output.put((byte) (value & 0xff));
-        output.put((byte) ((value >> 8) & 0xff));
-    }
+    output.put((byte) (value & 0xff));
+    output.put((byte) ((value >> 8) & 0xff));
+  }
 }
