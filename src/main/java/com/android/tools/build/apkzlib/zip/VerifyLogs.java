@@ -19,59 +19,49 @@ package com.android.tools.build.apkzlib.zip;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Nonnull;
 
-/**
- * Factory for verification logs.
- */
+/** Factory for verification logs. */
 final class VerifyLogs {
 
-    private VerifyLogs() {}
+  private VerifyLogs() {}
 
-    /**
-     * Creates a {@link VerifyLog} that ignores all messages logged.
-     *
-     * @return the log
-     */
-    @Nonnull
-    static VerifyLog devNull() {
-        return new VerifyLog() {
-            @Override
-            public void log(@Nonnull String message) {}
+  /**
+   * Creates a {@link VerifyLog} that ignores all messages logged.
+   *
+   * @return the log
+   */
+  static VerifyLog devNull() {
+    return new VerifyLog() {
+      @Override
+      public void log(String message) {}
 
-            @Nonnull
-            @Override
-            public ImmutableList<String> getLogs() {
-                return ImmutableList.of();
-            }
-        };
-    }
+      @Override
+      public ImmutableList<String> getLogs() {
+        return ImmutableList.of();
+      }
+    };
+  }
 
-    /**
-     * Creates a {@link VerifyLog} that stores all log messages.
-     *
-     * @return the log
-     */
-    @Nonnull
-    static VerifyLog unlimited() {
-        return new VerifyLog() {
+  /**
+   * Creates a {@link VerifyLog} that stores all log messages.
+   *
+   * @return the log
+   */
+  static VerifyLog unlimited() {
+    return new VerifyLog() {
 
-            /**
-             * All saved messages.
-             */
-            @Nonnull
-            private final List<String> messages = new ArrayList<>();
+      /** All saved messages. */
+      private final List<String> messages = new ArrayList<>();
 
-            @Override
-            public void log(@Nonnull String message) {
-                messages.add(message);
-            }
+      @Override
+      public void log(String message) {
+        messages.add(message);
+      }
 
-            @Nonnull
-            @Override
-            public ImmutableList<String> getLogs() {
-                return ImmutableList.copyOf(messages);
-            }
-        };
-    }
+      @Override
+      public ImmutableList<String> getLogs() {
+        return ImmutableList.copyOf(messages);
+      }
+    };
+  }
 }

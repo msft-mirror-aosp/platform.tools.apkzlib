@@ -16,57 +16,56 @@
 
 package com.android.tools.build.apkzlib.zip.compress;
 
+import com.android.tools.build.apkzlib.bytestorage.ByteStorage;
 import com.android.tools.build.apkzlib.zip.CompressionResult;
 import com.android.tools.build.apkzlib.zip.Compressor;
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import java.util.concurrent.Executor;
-import javax.annotation.Nonnull;
 
 /**
- * A synchronous compressor is a compressor that computes the result of compression immediately
- * and never returns an uncomputed future object.
+ * A synchronous compressor is a compressor that computes the result of compression immediately and
+ * never returns an uncomputed future object.
  */
 public abstract class ExecutorCompressor implements Compressor {
 
-    /**
-     * The executor that does the work.
-     */
-    @Nonnull
-    private final Executor executor;
+  /** The executor that does the work. */
+  private final Executor executor;
 
-    /**
-     * Compressor that delegates execution into the given executor.
-     * @param executor the executor that will do the compress
-     */
-    public ExecutorCompressor(@Nonnull Executor executor) {
-        this.executor = executor;
-    }
+  /**
+   * Compressor that delegates execution into the given executor.
+   *
+   * @param executor the executor that will do the compress
+   */
+  public ExecutorCompressor(Executor executor) {
+    this.executor = executor;
+  }
 
-    @Nonnull
-    @Override
-    public ListenableFuture<CompressionResult> compress(
-            @Nonnull final CloseableByteSource source) {
-        final SettableFuture<CompressionResult> future = SettableFuture.create();
-        executor.execute(() -> {
-            try {
-                future.set(immediateCompress(source));
-            } catch (Throwable e) {
-                future.setException(e);
-            }
+  @Override
+  public ListenableFuture<CompressionResult> compress(
+      CloseableByteSource source, ByteStorage storage) {
+    final SettableFuture<CompressionResult> future = SettableFuture.create();
+    executor.execute(
+        () -> {
+          try {
+            future.set(immediateCompress(source, storage));
+          } catch (Throwable e) {
+            future.setException(e);
+          }
         });
 
-        return future;
-    }
+    return future;
+  }
 
-    /**
-     * Immediately compresses a source.
-     * @param source the source to compress
-     * @return the result of compression
-     * @throws Exception failed to compress
-     */
-    @Nonnull
-    protected abstract CompressionResult immediateCompress(@Nonnull CloseableByteSource source)
-            throws Exception;
+  /**
+   * Immediately compresses a source.
+   *
+   * @param source the source to compress
+   * @param storage a byte storage where the compressor can obtain data sources from
+   * @return the result of compression
+   * @throws Exception failed to compress
+   */
+  protected abstract CompressionResult immediateCompress(
+      CloseableByteSource source, ByteStorage storage) throws Exception;
 }

@@ -17,87 +17,78 @@
 package com.android.tools.build.apkzlib.sign;
 
 import java.security.NoSuchAlgorithmException;
-import javax.annotation.Nonnull;
 
-/**
- * Signature algorithm.
- */
+/** Signature algorithm. */
 public enum SignatureAlgorithm {
-    /** RSA algorithm. */
-    RSA("RSA", 1, "withRSA"),
+  /** RSA algorithm. */
+  RSA("RSA", 1, "withRSA"),
 
-    /** ECDSA algorithm. */
-    ECDSA("EC", 18, "withECDSA"),
+  /** ECDSA algorithm. */
+  ECDSA("EC", 18, "withECDSA"),
 
-    /** DSA algorithm. */
-    DSA("DSA", 1, "withDSA");
+  /** DSA algorithm. */
+  DSA("DSA", 1, "withDSA");
 
-    /** Name of the private key as reported by {@code PrivateKey}. */
-    @Nonnull public final String keyAlgorithm;
+  /** Name of the private key as reported by {@code PrivateKey}. */
+  public final String keyAlgorithm;
 
-    /**
-     * Minimum SDK version that allows this signature.
-     */
-    public final int minSdkVersion;
+  /** Minimum SDK version that allows this signature. */
+  public final int minSdkVersion;
 
-    /**
-     * Suffix appended to digest algorithm to obtain signature algorithm.
-     */
-    @Nonnull
-    public final String signatureAlgorithmSuffix;
+  /** Suffix appended to digest algorithm to obtain signature algorithm. */
+  public final String signatureAlgorithmSuffix;
 
-    /**
-     * Creates a new signature algorithm.
-     *
-     * @param keyAlgorithm the name as reported by {@code PrivateKey}
-     * @param minSdkVersion minimum SDK version that allows this signature
-     * @param signatureAlgorithmSuffix suffix for signature name with used with a digest
-     */
-    SignatureAlgorithm(
-            @Nonnull String keyAlgorithm, int minSdkVersion, @Nonnull String signatureAlgorithmSuffix) {
-        this.keyAlgorithm = keyAlgorithm;
-        this.minSdkVersion = minSdkVersion;
-        this.signatureAlgorithmSuffix = signatureAlgorithmSuffix;
-    }
+  /**
+   * Creates a new signature algorithm.
+   *
+   * @param keyAlgorithm the name as reported by {@code PrivateKey}
+   * @param minSdkVersion minimum SDK version that allows this signature
+   * @param signatureAlgorithmSuffix suffix for signature name with used with a digest
+   */
+  SignatureAlgorithm(String keyAlgorithm, int minSdkVersion, String signatureAlgorithmSuffix) {
+    this.keyAlgorithm = keyAlgorithm;
+    this.minSdkVersion = minSdkVersion;
+    this.signatureAlgorithmSuffix = signatureAlgorithmSuffix;
+  }
 
-    /**
-     * Obtains the signature algorithm that corresponds to a private key name applicable to a
-     * SDK version.
-     *
-     * @param keyAlgorithm the named referred in the {@code PrivateKey}
-     * @param minSdkVersion minimum SDK version to run
-     * @return the algorithm that has {@link #keyAlgorithm} equal to {@code keyAlgorithm}
-     * @throws NoSuchAlgorithmException if no algorithm was found for the given private key; an
-     * algorithm was found but is not applicable to the given SDK version
-     */
-    @Nonnull
-    public static SignatureAlgorithm fromKeyAlgorithm(@Nonnull String keyAlgorithm,
-            int minSdkVersion) throws NoSuchAlgorithmException {
-        for (SignatureAlgorithm alg : values()) {
-            if (alg.keyAlgorithm.equalsIgnoreCase(keyAlgorithm)) {
-                if (alg.minSdkVersion > minSdkVersion) {
-                    throw new NoSuchAlgorithmException("Signatures with " + keyAlgorithm
-                            + " keys are not supported on minSdkVersion " + minSdkVersion
-                            + ". They are supported only for minSdkVersion >= "
-                            + alg.minSdkVersion);
-                }
-
-                return alg;
-            }
+  /**
+   * Obtains the signature algorithm that corresponds to a private key name applicable to a SDK
+   * version.
+   *
+   * @param keyAlgorithm the named referred in the {@code PrivateKey}
+   * @param minSdkVersion minimum SDK version to run
+   * @return the algorithm that has {@link #keyAlgorithm} equal to {@code keyAlgorithm}
+   * @throws NoSuchAlgorithmException if no algorithm was found for the given private key; an
+   *     algorithm was found but is not applicable to the given SDK version
+   */
+  public static SignatureAlgorithm fromKeyAlgorithm(String keyAlgorithm, int minSdkVersion)
+      throws NoSuchAlgorithmException {
+    for (SignatureAlgorithm alg : values()) {
+      if (alg.keyAlgorithm.equalsIgnoreCase(keyAlgorithm)) {
+        if (alg.minSdkVersion > minSdkVersion) {
+          throw new NoSuchAlgorithmException(
+              "Signatures with "
+                  + keyAlgorithm
+                  + " keys are not supported on minSdkVersion "
+                  + minSdkVersion
+                  + ". They are supported only for minSdkVersion >= "
+                  + alg.minSdkVersion);
         }
 
-        throw new NoSuchAlgorithmException("Signing with " + keyAlgorithm
-                + " keys is not supported");
+        return alg;
+      }
     }
 
-    /**
-     * Obtains the name of the signature algorithm when used with a digest algorithm.
-     *
-     * @param digestAlgorithm the digest algorithm to use
-     * @return the name of the signature algorithm
-     */
-    @Nonnull
-    public String signatureAlgorithmName(@Nonnull DigestAlgorithm digestAlgorithm) {
-        return digestAlgorithm.messageDigestName.replace("-", "") + signatureAlgorithmSuffix;
-    }
+    throw new NoSuchAlgorithmException("Signing with " + keyAlgorithm + " keys is not supported");
+  }
+
+  /**
+   * Obtains the name of the signature algorithm when used with a digest algorithm.
+   *
+   * @param digestAlgorithm the digest algorithm to use
+   * @return the name of the signature algorithm
+   */
+  public String signatureAlgorithmName(DigestAlgorithm digestAlgorithm) {
+    return digestAlgorithm.messageDigestName.replace("-", "") + signatureAlgorithmSuffix;
+  }
 }

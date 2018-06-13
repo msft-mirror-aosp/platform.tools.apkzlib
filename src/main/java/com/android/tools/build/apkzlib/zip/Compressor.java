@@ -16,9 +16,9 @@
 
 package com.android.tools.build.apkzlib.zip;
 
+import com.android.tools.build.apkzlib.bytestorage.ByteStorage;
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
 import com.google.common.util.concurrent.ListenableFuture;
-import javax.annotation.Nonnull;
 
 /**
  * A compressor is capable of, well, compressing data. Data is read from an {@code ByteSource}.
@@ -27,12 +27,12 @@ import javax.annotation.Nonnull;
  */
 public interface Compressor {
 
-    /**
-     * Compresses an entry source.
-     *
-     * @param source the source to compress
-     * @return a future that will eventually contain the compression result
-     */
-    @Nonnull
-    ListenableFuture<CompressionResult> compress(@Nonnull CloseableByteSource source);
+  /**
+   * Compresses an entry source.
+   *
+   * @param source the source to compress
+   * @param storage a byte storage from where the compressor can obtain byte sources to work
+   * @return a future that will eventually contain the compression result
+   */
+  ListenableFuture<CompressionResult> compress(CloseableByteSource source, ByteStorage storage);
 }

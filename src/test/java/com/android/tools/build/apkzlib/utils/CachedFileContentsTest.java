@@ -27,95 +27,97 @@ import java.io.File;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class CachedFileContentsTest {
-    @Rule
-    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
+  @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    @Test
-    public void createFileAndCheckWithNoChanges() throws Exception {
-        File f = mTemporaryFolder.newFile("test");
-        Files.write("abc", f, Charsets.US_ASCII);
+  @Test
+  public void createFileAndCheckWithNoChanges() throws Exception {
+    File f = temporaryFolder.newFile("test");
+    Files.write("abc", f, Charsets.US_ASCII);
 
-        Object cache = new Object();
+    Object cache = new Object();
 
-        CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
-        cachedFile.closed(cache);
+    CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
+    cachedFile.closed(cache);
 
-        assertTrue(cachedFile.isValid());
-        assertSame(cache, cachedFile.getCache());
-    }
+    assertTrue(cachedFile.isValid());
+    assertSame(cache, cachedFile.getCache());
+  }
 
-    @Test
-    public void createFileAndCheckChanges() throws Exception {
-        File f = mTemporaryFolder.newFile("test");
-        Files.write("abc", f, Charsets.US_ASCII);
+  @Test
+  public void createFileAndCheckChanges() throws Exception {
+    File f = temporaryFolder.newFile("test");
+    Files.write("abc", f, Charsets.US_ASCII);
 
-        Object cache = new Object();
+    Object cache = new Object();
 
-        CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
-        cachedFile.closed(cache);
+    CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
+    cachedFile.closed(cache);
 
-        Files.write("def", f, Charsets.US_ASCII);
+    Files.write("def", f, Charsets.US_ASCII);
 
-        assertFalse(cachedFile.isValid());
-        assertNull(cachedFile.getCache());
-    }
+    assertFalse(cachedFile.isValid());
+    assertNull(cachedFile.getCache());
+  }
 
-    @Test
-    public void createFileUpdateAndCheckChanges() throws Exception {
-        File f = mTemporaryFolder.newFile("test");
-        Files.write("abc", f, Charsets.US_ASCII);
+  @Test
+  public void createFileUpdateAndCheckChanges() throws Exception {
+    File f = temporaryFolder.newFile("test");
+    Files.write("abc", f, Charsets.US_ASCII);
 
-        Object cache = new Object();
+    Object cache = new Object();
 
-        CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
-        cachedFile.closed(cache);
+    CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
+    cachedFile.closed(cache);
 
-        Files.write("def", f, Charsets.US_ASCII);
-        cachedFile.closed(cache);
+    Files.write("def", f, Charsets.US_ASCII);
+    cachedFile.closed(cache);
 
-        assertTrue(cachedFile.isValid());
-        assertSame(cache, cachedFile.getCache());
-    }
+    assertTrue(cachedFile.isValid());
+    assertSame(cache, cachedFile.getCache());
+  }
 
-    @Test
-    public void immediateChangesDetected() throws Exception {
-        File f = mTemporaryFolder.newFile("foo");
-        Files.write("bar", f, Charsets.US_ASCII);
+  @Test
+  public void immediateChangesDetected() throws Exception {
+    File f = temporaryFolder.newFile("foo");
+    Files.write("bar", f, Charsets.US_ASCII);
 
-        CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
-        cachedFile.closed(null);
+    CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
+    cachedFile.closed(null);
 
-        Files.write("xpto", f, Charsets.US_ASCII);
-        assertFalse(cachedFile.isValid());
-    }
+    Files.write("xpto", f, Charsets.US_ASCII);
+    assertFalse(cachedFile.isValid());
+  }
 
-    @Test
-    public void immediateChangesDetectedEvenWithHackedTs() throws Exception {
-        File f = mTemporaryFolder.newFile("foo");
-        Files.write("bar", f, Charsets.US_ASCII);
+  @Test
+  public void immediateChangesDetectedEvenWithHackedTs() throws Exception {
+    File f = temporaryFolder.newFile("foo");
+    Files.write("bar", f, Charsets.US_ASCII);
 
-        CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
-        cachedFile.closed(null);
-        long lastTs = f.lastModified();
+    CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
+    cachedFile.closed(null);
+    long lastTs = f.lastModified();
 
-        Files.write("xpto", f, Charsets.US_ASCII);
-        f.setLastModified(lastTs);
-        assertFalse(cachedFile.isValid());
-    }
+    Files.write("xpto", f, Charsets.US_ASCII);
+    f.setLastModified(lastTs);
+    assertFalse(cachedFile.isValid());
+  }
 
-    @Test
-    public void immediateChangesWithNoContentChangeNotDetected() throws Exception {
-        File f = mTemporaryFolder.newFile("foo");
-        Files.write("bar", f, Charsets.US_ASCII);
+  @Test
+  public void immediateChangesWithNoContentChangeNotDetected() throws Exception {
+    File f = temporaryFolder.newFile("foo");
+    Files.write("bar", f, Charsets.US_ASCII);
 
-        CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
-        cachedFile.closed(null);
-        long lastTs = f.lastModified();
+    CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
+    cachedFile.closed(null);
+    long lastTs = f.lastModified();
 
-        Files.write("bar", f, Charsets.US_ASCII);
-        f.setLastModified(lastTs);
-        assertTrue(cachedFile.isValid());
-    }
+    Files.write("bar", f, Charsets.US_ASCII);
+    f.setLastModified(lastTs);
+    assertTrue(cachedFile.isValid());
+  }
 }

@@ -16,17 +16,11 @@
 
 package com.android.tools.build.apkzlib.zip;
 
-/**
- * Type of stored entry.
- */
+/** Type of stored entry. */
 public enum StoredEntryType {
-    /**
-     * Entry is a file.
-     */
-    FILE,
+  /** Entry is a file. */
+  FILE,
 
-    /**
-     * Entry is a directory.
-     */
-    DIRECTORY
+  /** Entry is a directory. */
+  DIRECTORY
 }

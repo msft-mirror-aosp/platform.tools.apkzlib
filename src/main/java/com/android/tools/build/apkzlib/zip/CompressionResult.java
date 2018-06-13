@@ -17,70 +17,58 @@
 package com.android.tools.build.apkzlib.zip;
 
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
-import javax.annotation.Nonnull;
 
-/**
- * Result of compressing data.
- */
+/** Result of compressing data. */
 public class CompressionResult {
 
-    /**
-     * The compression method used.
-     */
-    @Nonnull
-    private final CompressionMethod compressionMethod;
+  /** The compression method used. */
+  private final CompressionMethod compressionMethod;
 
-    /**
-     * The resulting data.
-     */
-    @Nonnull
-    private final CloseableByteSource source;
+  /** The resulting data. */
+  private final CloseableByteSource source;
 
-    /**
-     * Size of the compressed source. Kept because {@code source.size()} can throw
-     * {@code IOException}.
-     */
-    private final long mSize;
+  /**
+   * Size of the compressed source. Kept because {@code source.size()} can throw {@code
+   * IOException}.
+   */
+  private final long mSize;
 
-    /**
-     * Creates a new compression result.
-     *
-     * @param source the data source
-     * @param method the compression method
-     */
-    public CompressionResult(@Nonnull CloseableByteSource source, @Nonnull CompressionMethod method,
-            long size) {
-        compressionMethod = method;
-        this.source = source;
-        mSize = size;
-    }
+  /**
+   * Creates a new compression result.
+   *
+   * @param source the data source
+   * @param method the compression method
+   */
+  public CompressionResult(CloseableByteSource source, CompressionMethod method, long size) {
+    compressionMethod = method;
+    this.source = source;
+    mSize = size;
+  }
 
-    /**
-     * Obtains the compression method.
-     *
-     * @return the compression method
-     */
-    @Nonnull
-    public CompressionMethod getCompressionMethod() {
-        return compressionMethod;
-    }
+  /**
+   * Obtains the compression method.
+   *
+   * @return the compression method
+   */
+  public CompressionMethod getCompressionMethod() {
+    return compressionMethod;
+  }
 
-    /**
-     * Obtains the compressed data.
-     *
-     * @return the data, the resulting array should not be modified
-     */
-    @Nonnull
-    public CloseableByteSource getSource() {
-        return source;
-    }
+  /**
+   * Obtains the compressed data.
+   *
+   * @return the data, the resulting array should not be modified
+   */
+  public CloseableByteSource getSource() {
+    return source;
+  }
 
-    /**
-     * Obtains the size of the compression result.
-     *
-     * @return the size
-     */
-    public long getSize() {
-        return mSize;
-    }
+  /**
+   * Obtains the size of the compression result.
+   *
+   * @return the size
+   */
+  public long getSize() {
+    return mSize;
+  }
 }

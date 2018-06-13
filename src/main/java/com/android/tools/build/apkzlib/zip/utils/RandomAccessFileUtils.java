@@ -18,42 +18,38 @@ package com.android.tools.build.apkzlib.zip.utils;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import javax.annotation.Nonnull;
 
-/**
- * Utility class with utility methods for random access files.
- */
+/** Utility class with utility methods for random access files. */
 public final class RandomAccessFileUtils {
 
-    private RandomAccessFileUtils() {}
+  private RandomAccessFileUtils() {}
 
-    /**
-     * Reads from an random access file until the provided array is filled. Data is read from the
-     * current position in the file.
-     *
-     * @param raf the file to read data from
-     * @param data the array that will receive the data
-     * @throws IOException failed to read the data
-     */
-    public static void fullyRead(@Nonnull RandomAccessFile raf, @Nonnull byte[] data)
-            throws IOException {
-        int r;
-        int p = 0;
+  /**
+   * Reads from an random access file until the provided array is filled. Data is read from the
+   * current position in the file.
+   *
+   * @param raf the file to read data from
+   * @param data the array that will receive the data
+   * @throws IOException failed to read the data
+   */
+  public static void fullyRead(RandomAccessFile raf, byte[] data) throws IOException {
+    int r;
+    int p = 0;
 
-        while ((r = raf.read(data, p, data.length - p)) > 0) {
-            p += r;
-            if (p == data.length) {
-                break;
-            }
-        }
-
-        if (p < data.length) {
-            throw new IOException(
-                    "Failed to read "
-                            + data.length
-                            + " bytes from file. Only "
-                            + p
-                            + " bytes could be read.");
-        }
+    while ((r = raf.read(data, p, data.length - p)) > 0) {
+      p += r;
+      if (p == data.length) {
+        break;
+      }
     }
+
+    if (p < data.length) {
+      throw new IOException(
+          "Failed to read "
+              + data.length
+              + " bytes from file. Only "
+              + p
+              + " bytes could be read.");
+    }
+  }
 }

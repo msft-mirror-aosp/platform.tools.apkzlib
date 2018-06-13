@@ -17,7 +17,6 @@
 package com.android.tools.build.apkzlib.utils;
 
 import java.io.IOException;
-import javax.annotation.Nonnull;
 
 /**
  * Runtime exception used to encapsulate an IO Exception. This is used to allow throwing I/O
@@ -25,18 +24,17 @@ import javax.annotation.Nonnull;
  */
 public class IOExceptionWrapper extends RuntimeException {
 
-    /**
-     * Creates a new exception.
-     *
-     * @param e the I/O exception to encapsulate
-     */
-    public IOExceptionWrapper(@Nonnull IOException e) {
-        super(e);
-    }
+  /**
+   * Creates a new exception.
+   *
+   * @param e the I/O exception to encapsulate
+   */
+  public IOExceptionWrapper(IOException e) {
+    super(e);
+  }
 
-    @Override
-    @Nonnull
-    public IOException getCause() {
-        return (IOException) super.getCause();
-    }
+  @Override
+  public IOException getCause() {
+    return (IOException) super.getCause();
+  }
 }

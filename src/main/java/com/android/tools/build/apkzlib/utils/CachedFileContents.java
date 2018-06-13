@@ -22,7 +22,6 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -51,126 +50,111 @@ import javax.annotation.Nullable;
  */
 public class CachedFileContents<T> {
 
-    /**
-     * The file.
-     */
-    @Nonnull
-    private File file;
+  /** The file. */
+  private final File file;
 
-    /**
-     * Time when last closed (time when {@link #closed(Object)} was invoked).
-     */
-    private long lastClosed;
+  /** Time when last closed (time when {@link #closed(Object)} was invoked). */
+  private long lastClosed;
 
-    /**
-     * Size of the file when last closed.
-     */
-    private long size;
+  /** Size of the file when last closed. */
+  private long size;
 
-    /**
-     * Hash of the file when closed. {@code null} if hashing failed for some reason.
-     */
-    @Nullable
-    private HashCode hash;
+  /** Hash of the file when closed. {@code null} if hashing failed for some reason. */
+  @Nullable private HashCode hash;
 
-    /**
-     * Cached data associated with the file.
-     */
-    @Nullable
-    private T cache;
+  /** Cached data associated with the file. */
+  @Nullable private T cache;
 
-    /**
-     * Creates a new contents. When the file is written, {@link #closed(Object)} should be invoked
-     * to set the cache.
-     *
-     * @param file the file
-     */
-    public CachedFileContents(@Nonnull File file) {
-        this.file = file;
+  /**
+   * Creates a new contents. When the file is written, {@link #closed(Object)} should be invoked to
+   * set the cache.
+   *
+   * @param file the file
+   */
+  public CachedFileContents(File file) {
+    this.file = file;
+  }
+
+  /**
+   * Should be called when the file's contents are set and the file closed. This will save the cache
+   * and register the file's timestamp to later detect if it has been modified.
+   *
+   * <p>This method can be called as many times as the file has been written.
+   *
+   * @param cache an optional cache to save
+   */
+  public void closed(@Nullable T cache) {
+    this.cache = cache;
+    lastClosed = file.lastModified();
+    size = file.length();
+    hash = hashFile();
+  }
+
+  /**
+   * Are the cached contents still valid? If this method determines that the file has been modified
+   * since the last time {@link #closed(Object)} was invoked.
+   *
+   * @return are the cached contents still valid? If this method returns {@code false}, the cache is
+   *     cleared
+   */
+  public boolean isValid() {
+    boolean valid = true;
+
+    if (!file.exists()) {
+      valid = false;
     }
 
-    /**
-     * Should be called when the file's contents are set and the file closed. This will save the
-     * cache and register the file's timestamp to later detect if it has been modified.
-     * <p>
-     * This method can be called as many times as the file has been written.
-     *
-     * @param cache an optional cache to save
-     */
-    public void closed(@Nullable T cache) {
-        this.cache = cache;
-        lastClosed = file.lastModified();
-        size = file.length();
-        hash = hashFile();
+    if (valid && file.lastModified() != lastClosed) {
+      valid = false;
     }
 
-    /**
-     * Are the cached contents still valid? If this method determines that the file has been
-     * modified since the last time {@link #closed(Object)} was invoked.
-     *
-     * @return are the cached contents still valid? If this method returns {@code false}, the
-     * cache is cleared
-     */
-    public boolean isValid() {
-        boolean valid = true;
-
-        if (!file.exists()) {
-            valid = false;
-        }
-
-        if (valid && file.lastModified() != lastClosed) {
-            valid = false;
-        }
-
-        if (valid && file.length() != size) {
-            valid = false;
-        }
-
-        if (valid && !Objects.equal(hash, hashFile())) {
-            valid = false;
-        }
-
-        if (!valid) {
-            cache = null;
-        }
-
-        return valid;
+    if (valid && file.length() != size) {
+      valid = false;
     }
 
-    /**
-     * Obtains the cached data set with {@link #closed(Object)} if the file has not been modified
-     * since {@link #closed(Object)} was invoked.
-     *
-     * @return the last cached data or {@code null} if the file has been modified since
-     * {@link #closed(Object)} has been invoked
-     */
-    @Nullable
-    public T getCache() {
-        return cache;
+    if (valid && !Objects.equal(hash, hashFile())) {
+      valid = false;
     }
 
-    /**
-     * Computes the hashcode of the cached file.
-     *
-     * @return the hash code
-     */
-    @Nullable
-    private HashCode hashFile() {
-        try {
-            return Files.hash(file, Hashing.crc32());
-        } catch (IOException e) {
-            return null;
-        }
+    if (!valid) {
+      cache = null;
     }
 
-    /**
-     * Obtains the file used for caching.
-     *
-     * @return the file; this file always exists and contains the old (cached) contents of the
-     * file
-     */
-    @Nonnull
-    public File getFile() {
-        return file;
+    return valid;
+  }
+
+  /**
+   * Obtains the cached data set with {@link #closed(Object)} if the file has not been modified
+   * since {@link #closed(Object)} was invoked.
+   *
+   * @return the last cached data or {@code null} if the file has been modified since {@link
+   *     #closed(Object)} has been invoked
+   */
+  @Nullable
+  public T getCache() {
+    return cache;
+  }
+
+  /**
+   * Computes the hashcode of the cached file.
+   *
+   * @return the hash code
+   */
+  @Nullable
+  private HashCode hashFile() {
+    try {
+      return Files.hash(file, Hashing.crc32());
+    } catch (IOException e) {
+      return null;
     }
+  }
+
+  /**
+   * Obtains the file used for caching.
+   *
+   * @return the file; this file always exists and contains the old (cached) contents of the file
+   */
+  public File getFile() {
+    return file;
+  }
 }

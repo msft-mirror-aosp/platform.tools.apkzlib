@@ -28,36 +28,32 @@ import java.io.IOException;
  */
 public abstract class CloseableByteSource extends ByteSource implements Closeable {
 
-    /**
-     * Has the source been closed?
-     */
-    private boolean closed;
+  /** Has the source been closed? */
+  private boolean closed;
 
-    /**
-     * Creates a new byte source.
-     */
-    public CloseableByteSource() {
-        closed = false;
+  /** Creates a new byte source. */
+  public CloseableByteSource() {
+    closed = false;
+  }
+
+  @Override
+  public final synchronized void close() throws IOException {
+    if (closed) {
+      return;
     }
 
-    @Override
-    public final synchronized void close() throws IOException {
-        if (closed) {
-            return;
-        }
-
-        try {
-            innerClose();
-        } finally {
-            closed = true;
-        }
+    try {
+      innerClose();
+    } finally {
+      closed = true;
     }
+  }
 
-    /**
-     * Closes the by source. This method is only invoked once, even if {@link #close()} is
-     * called multiple times.
-     *
-     * @throws IOException failed to close
-     */
-    protected abstract void innerClose() throws IOException;
+  /**
+   * Closes the by source. This method is only invoked once, even if {@link #close()} is called
+   * multiple times.
+   *
+   * @throws IOException failed to close
+   */
+  protected abstract void innerClose() throws IOException;
 }

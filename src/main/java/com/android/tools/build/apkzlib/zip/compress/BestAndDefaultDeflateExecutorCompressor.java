@@ -16,13 +16,13 @@
 
 package com.android.tools.build.apkzlib.zip.compress;
 
+import com.android.tools.build.apkzlib.bytestorage.ByteStorage;
 import com.android.tools.build.apkzlib.zip.CompressionResult;
 import com.android.tools.build.apkzlib.zip.utils.ByteTracker;
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
 import com.google.common.base.Preconditions;
 import java.util.concurrent.Executor;
 import java.util.zip.Deflater;
-import javax.annotation.Nonnull;
 
 /**
  * Compressor that tries both the best and default compression algorithms and picks the default
@@ -30,60 +30,55 @@ import javax.annotation.Nonnull;
  */
 public class BestAndDefaultDeflateExecutorCompressor extends ExecutorCompressor {
 
-    /**
-     * Deflater using the default compression level.
-     */
-    @Nonnull
-    private final DeflateExecutionCompressor defaultDeflater;
+  /** Deflater using the default compression level. */
+  private final DeflateExecutionCompressor defaultDeflater;
 
-    /**
-     * Deflater using the best compression level.
-     */
-    @Nonnull
-    private final DeflateExecutionCompressor bestDeflater;
+  /** Deflater using the best compression level. */
+  private final DeflateExecutionCompressor bestDeflater;
 
-    /**
-     * Minimum best compression size / default compression size ratio needed to pick the default
-     * compression size.
-     */
-    private final double minRatio;
+  /**
+   * Minimum best compression size / default compression size ratio needed to pick the default
+   * compression size.
+   */
+  private final double minRatio;
 
-    /**
-     * Creates a new compressor.
-     *
-     * @param executor the executor used to perform compression activities.
-     * @param tracker the byte tracker to keep track of allocated bytes
-     * @param minRatio the minimum best compression size / default compression size needed to pick
-     * the default compression size; if {@code 0.0} then the default compression is always picked,
-     * if {@code 1.0} then the best compression is always picked unless it produces the exact same
-     * size as the default compression.
-     */
-    public BestAndDefaultDeflateExecutorCompressor(@Nonnull Executor executor,
-            @Nonnull ByteTracker tracker, double minRatio) {
-        super(executor);
+  /**
+   * Creates a new compressor.
+   *
+   * @param executor the executor used to perform compression activities.
+   * @param minRatio the minimum best compression size / default compression size needed to pick the
+   *     default compression size; if {@code 0.0} then the default compression is always picked, if
+   *     {@code 1.0} then the best compression is always picked unless it produces the exact same
+   *     size as the default compression.
+   */
+  public BestAndDefaultDeflateExecutorCompressor(Executor executor, double minRatio) {
+    super(executor);
 
-        Preconditions.checkArgument(minRatio >= 0.0, "minRatio < 0.0");
-        Preconditions.checkArgument(minRatio <= 1.0, "minRatio > 1.0");
+    Preconditions.checkArgument(minRatio >= 0.0, "minRatio < 0.0");
+    Preconditions.checkArgument(minRatio <= 1.0, "minRatio > 1.0");
 
-        defaultDeflater =
-                new DeflateExecutionCompressor(executor, tracker, Deflater.DEFAULT_COMPRESSION);
-        bestDeflater =
-                new DeflateExecutionCompressor(executor, tracker, Deflater.BEST_COMPRESSION);
-        this.minRatio = minRatio;
+    defaultDeflater = new DeflateExecutionCompressor(executor, Deflater.DEFAULT_COMPRESSION);
+    bestDeflater = new DeflateExecutionCompressor(executor, Deflater.BEST_COMPRESSION);
+    this.minRatio = minRatio;
+  }
+
+  @Deprecated
+  public BestAndDefaultDeflateExecutorCompressor(
+      Executor executor, ByteTracker tracker, double minRatio) {
+    this(executor, minRatio);
+  }
+
+  @Override
+  protected CompressionResult immediateCompress(CloseableByteSource source, ByteStorage storage)
+      throws Exception {
+    CompressionResult defaultResult = defaultDeflater.immediateCompress(source, storage);
+    CompressionResult bestResult = bestDeflater.immediateCompress(source, storage);
+
+    double sizeRatio = bestResult.getSize() / (double) defaultResult.getSize();
+    if (sizeRatio >= minRatio) {
+      return defaultResult;
+    } else {
+      return bestResult;
     }
-
-    @Nonnull
-    @Override
-    protected CompressionResult immediateCompress(@Nonnull CloseableByteSource source)
-            throws Exception {
-        CompressionResult defaultResult = defaultDeflater.immediateCompress(source);
-        CompressionResult bestResult = bestDeflater.immediateCompress(source);
-
-        double sizeRatio = bestResult.getSize() / (double) defaultResult.getSize();
-        if (sizeRatio >= minRatio) {
-            return defaultResult;
-        } else {
-            return bestResult;
-        }
-    }
+  }
 }

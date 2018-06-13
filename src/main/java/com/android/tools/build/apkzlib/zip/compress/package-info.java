@@ -14,7 +14,5 @@
  * limitations under the License.
  */
 
-/**
- * Compressors to use with the {@code zip} package.
- */
+/** Compressors to use with the {@code zip} package. */
 package com.android.tools.build.apkzlib.zip.compress;

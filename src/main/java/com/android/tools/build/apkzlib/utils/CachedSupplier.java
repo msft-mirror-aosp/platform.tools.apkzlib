@@ -17,7 +17,6 @@
 package com.android.tools.build.apkzlib.utils;
 
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
 
 /**
  * Supplier that will cache a computed value and always supply the same value. It can be used to
@@ -45,74 +44,66 @@ import javax.annotation.Nonnull;
  */
 public class CachedSupplier<T> {
 
-    /**
-     * The cached data, {@code null} if computation resulted in {@code null}. It is also
-     * {@code null} if the cached data has not yet been computed.
-     */
-    private T cached;
+  /**
+   * The cached data, {@code null} if computation resulted in {@code null}. It is also {@code null}
+   * if the cached data has not yet been computed.
+   */
+  private T cached;
 
-    /**
-     * Is the current data in {@link #cached} valid?
-     */
-    private boolean valid;
+  /** Is the current data in {@link #cached} valid? */
+  private boolean valid;
 
-    /**
-     * Actual supplier of data, if computation is needed.
-     */
-    @Nonnull
-    private final Supplier<T> supplier;
+  /** Actual supplier of data, if computation is needed. */
+  private final Supplier<T> supplier;
 
-    /**
-     * Creates a new supplier.
-     */
-    public CachedSupplier(@Nonnull Supplier<T> supplier) {
-        valid = false;
-        this.supplier = supplier;
+  /** Creates a new supplier. */
+  public CachedSupplier(Supplier<T> supplier) {
+    valid = false;
+    this.supplier = supplier;
+  }
+
+  /**
+   * Obtains the value.
+   *
+   * @return the value, either cached (if one exists) or computed
+   */
+  public synchronized T get() {
+    if (!valid) {
+      cached = supplier.get();
+      valid = true;
     }
 
+    return cached;
+  }
 
-    /**
-     * Obtains the value.
-     *
-     * @return the value, either cached (if one exists) or computed
-     */
-    public synchronized T get() {
-        if (!valid) {
-            cached = supplier.get();
-            valid = true;
-        }
+  /**
+   * Resets the cache forcing a {@code get()} on the supplier next time {@link #get()} is invoked.
+   */
+  public synchronized void reset() {
+    cached = null;
+    valid = false;
+  }
 
-        return cached;
-    }
+  /**
+   * In some cases, we may be able to precompute the cache value (or load it from somewhere we had
+   * previously stored it). This method allows the cache value to be loaded.
+   *
+   * <p>If this method is invoked, then an invocation of {@link #get()} will not trigger an
+   * invocation of the supplier provided in the constructor.
+   *
+   * @param t the new cache contents; will replace any currently cache content, if one exists
+   */
+  public synchronized void precomputed(T t) {
+    cached = t;
+    valid = true;
+  }
 
-    /**
-     * Resets the cache forcing a {@code get()} on the supplier next time {@link #get()} is invoked.
-     */
-    public synchronized void reset() {
-        cached = null;
-        valid = false;
-    }
-
-    /**
-     * In some cases, we may be able to precompute the cache value (or load it from somewhere we
-     * had previously stored it). This method allows the cache value to be loaded.
-     *
-     * <p>If this method is invoked, then an invocation of {@link #get()} will not trigger an
-     * invocation of the supplier provided in the constructor.
-     *
-     * @param t the new cache contents; will replace any currently cache content, if one exists
-     */
-    public synchronized void precomputed(T t) {
-        cached = t;
-        valid = true;
-    }
-
-    /**
-     * Checks if the contents of the cache are valid.
-     *
-     * @return are there valid contents in the cache?
-     */
-    public synchronized boolean isValid() {
-        return valid;
-    }
+  /**
+   * Checks if the contents of the cache are valid.
+   *
+   * @return are there valid contents in the cache?
+   */
+  public synchronized boolean isValid() {
+    return valid;
+  }
 }

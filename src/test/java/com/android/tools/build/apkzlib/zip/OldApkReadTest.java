@@ -22,17 +22,20 @@ import static org.junit.Assert.assertTrue;
 import com.android.tools.build.apkzlib.utils.ApkZFileTestUtils;
 import java.io.File;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class OldApkReadTest {
 
-    @Test
-    public void testReadOldApk() throws Exception {
-        File apkFile = ApkZFileTestUtils.getResource("/testData/packaging/test.apk");
-        assertTrue(apkFile.exists());
+  @Test
+  public void testReadOldApk() throws Exception {
+    File apkFile = ApkZFileTestUtils.getResource("packaging/test.apk");
+    assertTrue(apkFile.exists());
 
-        try (ZFile zf = new ZFile(apkFile, new ZFileOptions())) {
-            StoredEntry classesDex = zf.get("classes.dex");
-            assertNotNull(classesDex);
-        }
+    try (ZFile zf = new ZFile(apkFile, new ZFileOptions())) {
+      StoredEntry classesDex = zf.get("classes.dex");
+      assertNotNull(classesDex);
     }
+  }
 }

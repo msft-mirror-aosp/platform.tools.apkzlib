@@ -16,6 +16,7 @@
 
 package com.android.tools.build.apkzlib.zip.compress;
 
+import com.android.tools.build.apkzlib.bytestorage.ByteStorage;
 import com.android.tools.build.apkzlib.zip.CompressionMethod;
 import com.android.tools.build.apkzlib.zip.CompressionResult;
 import com.android.tools.build.apkzlib.zip.utils.ByteTracker;
@@ -24,58 +25,45 @@ import java.io.ByteArrayOutputStream;
 import java.util.concurrent.Executor;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
-import javax.annotation.Nonnull;
 
-/**
- * Compressor that uses deflate with an executor.
- */
+/** Compressor that uses deflate with an executor. */
 public class DeflateExecutionCompressor extends ExecutorCompressor {
 
+  /** Deflate compression level. */
+  private final int level;
 
-    /**
-     * Deflate compression level.
-     */
-    private final int level;
+  /**
+   * Creates a new compressor.
+   *
+   * @param executor the executor to run deflation tasks
+   * @param level the compression level
+   */
+  public DeflateExecutionCompressor(Executor executor, int level) {
+    super(executor);
 
-    /**
-     * Byte tracker to use to create byte sources.
-     */
-    @Nonnull
-    private final ByteTracker tracker;
+    this.level = level;
+  }
 
-    /**
-     * Creates a new compressor.
-     *
-     * @param executor the executor to run deflation tasks
-     * @param tracker the byte tracker to use to keep track of memory usage
-     * @param level the compression level
-     */
-    public DeflateExecutionCompressor(
-            @Nonnull Executor executor,
-            @Nonnull ByteTracker tracker,
-            int level) {
-        super(executor);
+  @Deprecated
+  public DeflateExecutionCompressor(Executor executor, ByteTracker tracker, int level) {
+    this(executor, level);
+  }
 
-        this.level = level;
-        this.tracker = tracker;
+  @Override
+  protected CompressionResult immediateCompress(CloseableByteSource source, ByteStorage storage)
+      throws Exception {
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    Deflater deflater = new Deflater(level, true);
+
+    try (DeflaterOutputStream dos = new DeflaterOutputStream(output, deflater)) {
+      dos.write(source.read());
     }
 
-    @Nonnull
-    @Override
-    protected CompressionResult immediateCompress(@Nonnull CloseableByteSource source)
-            throws Exception {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Deflater deflater = new Deflater(level, true);
-
-        try (DeflaterOutputStream dos = new DeflaterOutputStream(output, deflater)) {
-            dos.write(source.read());
-        }
-
-        CloseableByteSource result = tracker.fromStream(output);
-        if (result.size() >= source.size()) {
-            return new CompressionResult(source, CompressionMethod.STORE, source.size());
-        } else {
-            return new CompressionResult(result, CompressionMethod.DEFLATE, result.size());
-        }
+    CloseableByteSource result = storage.fromStream(output);
+    if (result.size() >= source.size()) {
+      return new CompressionResult(source, CompressionMethod.STORE, source.size());
+    } else {
+      return new CompressionResult(result, CompressionMethod.DEFLATE, result.size());
     }
+  }
 }

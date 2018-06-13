@@ -29,128 +29,125 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.concurrent.ExecutionException;
-import javax.annotation.Nonnull;
 
 /**
- * {@code ByteSource} that delegates all operations to another {@code ByteSource}. The other
- * byte source, the <em>delegate</em>, may be computed lazily.
+ * {@code ByteSource} that delegates all operations to another {@code ByteSource}. The other byte
+ * source, the <em>delegate</em>, may be computed lazily.
  */
 public class LazyDelegateByteSource extends CloseableByteSource {
 
-    /**
-     * Byte source where we delegate operations to.
-     */
-    @Nonnull
-    private final ListenableFuture<CloseableByteSource> delegate;
+  /** Byte source where we delegate operations to. */
+  private final ListenableFuture<CloseableByteSource> delegate;
 
-    /**
-     * Creates a new byte source that delegates operations to the provided source.
-     * @param delegate the source that will receive all operations
-     */
-    public LazyDelegateByteSource(@Nonnull ListenableFuture<CloseableByteSource> delegate) {
-        this.delegate = delegate;
+  /**
+   * Creates a new byte source that delegates operations to the provided source.
+   *
+   * @param delegate the source that will receive all operations
+   */
+  public LazyDelegateByteSource(ListenableFuture<CloseableByteSource> delegate) {
+    this.delegate = delegate;
+  }
+
+  /**
+   * Obtains the delegate future.
+   *
+   * @return the delegate future, that may be computed or not
+   */
+  public ListenableFuture<CloseableByteSource> getDelegate() {
+    return delegate;
+  }
+
+  /**
+   * Obtains the byte source, waiting for the future to be computed.
+   *
+   * @return the byte source
+   * @throws IOException failed to compute the future :)
+   */
+  private CloseableByteSource get() throws IOException {
+    try {
+      CloseableByteSource r = delegate.get();
+      if (r == null) {
+        throw new IOException("Delegate byte source computation resulted in null.");
+      }
+
+      return r;
+    } catch (InterruptedException e) {
+      throw new IOException("Interrupted while waiting for byte source computation.", e);
+    } catch (ExecutionException e) {
+      throw new IOException("Failed to compute byte source.", e);
     }
+  }
 
-    /**
-     * Obtains the delegate future.
-     * @return the delegate future, that may be computed or not
-     */
-    @Nonnull
-    public ListenableFuture<CloseableByteSource> getDelegate() {
-        return delegate;
+  @Override
+  public CharSource asCharSource(Charset charset) {
+    try {
+      return get().asCharSource(charset);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
+  }
 
-    /**
-     * Obtains the byte source, waiting for the future to be computed.
-     * @return the byte source
-     * @throws IOException failed to compute the future :)
-     */
-    @Nonnull
-    private CloseableByteSource get() throws IOException {
-        try {
-            CloseableByteSource r = delegate.get();
-            if (r == null) {
-                throw new IOException("Delegate byte source computation resulted in null.");
-            }
+  @Override
+  public InputStream openBufferedStream() throws IOException {
+    return get().openBufferedStream();
+  }
 
-            return r;
-        } catch (InterruptedException e) {
-            throw new IOException("Interrupted while waiting for byte source computation.", e);
-        } catch (ExecutionException e) {
-            throw new IOException("Failed to compute byte source.", e);
-        }
+  @Override
+  public ByteSource slice(long offset, long length) {
+    try {
+      return get().slice(offset, length);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
+  }
 
-    @Override
-    public CharSource asCharSource(Charset charset) {
-        try {
-            return get().asCharSource(charset);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+  @Override
+  public boolean isEmpty() throws IOException {
+    return get().isEmpty();
+  }
 
-    @Override
-    public InputStream openBufferedStream() throws IOException {
-        return get().openBufferedStream();
-    }
+  @Override
+  public long size() throws IOException {
+    return get().size();
+  }
 
-    @Override
-    public ByteSource slice(long offset, long length) {
-        try {
-            return get().slice(offset, length);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+  @Override
+  public long copyTo(OutputStream output) throws IOException {
+    return get().copyTo(output);
+  }
 
-    @Override
-    public boolean isEmpty() throws IOException {
-        return get().isEmpty();
-    }
+  @Override
+  public long copyTo(ByteSink sink) throws IOException {
+    return get().copyTo(sink);
+  }
 
-    @Override
-    public long size() throws IOException {
-        return get().size();
-    }
+  @Override
+  public byte[] read() throws IOException {
+    return get().read();
+  }
 
-    @Override
-    public long copyTo(@Nonnull OutputStream output) throws IOException {
-        return get().copyTo(output);
-    }
+  @Override
+  public <T> T read(ByteProcessor<T> processor) throws IOException {
+    return get().read(processor);
+  }
 
-    @Override
-    public long copyTo(@Nonnull ByteSink sink) throws IOException {
-        return get().copyTo(sink);
-    }
+  @Override
+  public HashCode hash(HashFunction hashFunction) throws IOException {
+    return get().hash(hashFunction);
+  }
 
-    @Override
-    public byte[] read() throws IOException {
-        return get().read();
-    }
+  @Override
+  public boolean contentEquals(ByteSource other) throws IOException {
+    return get().contentEquals(other);
+  }
 
-    @Override
-    public <T> T read(@Nonnull ByteProcessor<T> processor) throws IOException {
-        return get().read(processor);
-    }
+  @Override
+  public InputStream openStream() throws IOException {
+    return get().openStream();
+  }
 
-    @Override
-    public HashCode hash(HashFunction hashFunction) throws IOException {
-        return get().hash(hashFunction);
-    }
-
-    @Override
-    public boolean contentEquals(@Nonnull ByteSource other) throws IOException {
-        return get().contentEquals(other);
-    }
-
-    @Override
-    public InputStream openStream() throws IOException {
-        return get().openStream();
-    }
-
-    @Override
-    public void innerClose() throws IOException {
-        get().close();
-    }
+  @Override
+  public void innerClose() throws IOException {
+    get().close();
+  }
 }

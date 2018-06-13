@@ -16,21 +16,17 @@
 
 package com.android.tools.build.apkzlib.zfile;
 
-/**
- * Describes how native libs should be packaged.
- */
+/** Describes how native libs should be packaged. */
 public enum NativeLibrariesPackagingMode {
-    /**
-     * Native libs are packaged as any other file.
-     */
-    COMPRESSED,
+  /** Native libs are packaged as any other file. */
+  COMPRESSED,
 
-    /**
-     * Native libs are packaged uncompressed and page-aligned, so they can be mapped into memory
-     * at runtime.
-     *
-     * <p>Support for this mode was added in Android 23, it only works if the
-     * {@code extractNativeLibs} attribute is set in the manifest.
-     */
-    UNCOMPRESSED_AND_ALIGNED;
+  /**
+   * Native libs are packaged uncompressed and page-aligned, so they can be mapped into memory at
+   * runtime.
+   *
+   * <p>Support for this mode was added in Android 23, it only works if the {@code
+   * extractNativeLibs} attribute is set in the manifest.
+   */
+  UNCOMPRESSED_AND_ALIGNED;
 }
