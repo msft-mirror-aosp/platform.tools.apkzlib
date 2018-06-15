@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /** Keeps track of used bytes allowing gauging memory usage. */
-class InMemoryByteStorage implements ByteStorage {
+public class InMemoryByteStorage implements ByteStorage {
 
   /** Number of bytes currently in use. */
   private long bytesUsed;
@@ -47,14 +47,25 @@ class InMemoryByteStorage implements ByteStorage {
   }
 
   @Override
-  public CloseableByteSource fromStream(ByteArrayOutputStream stream) throws IOException {
-    byte[] data = stream.toByteArray();
-    updateUsage(data.length);
-    return new CloseableDelegateByteSource(ByteSource.wrap(data), data.length) {
+  public CloseableByteSourceFromOutputStreamBuilder makeBuilder() throws IOException {
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    return new AbstractCloseableByteSourceFromOutputStreamBuilder() {
       @Override
-      public synchronized void innerClose() throws IOException {
-        super.innerClose();
-        updateUsage(-sizeNoException());
+      protected void doWrite(byte[] b, int off, int len) throws IOException {
+        output.write(b, off, len);
+        updateUsage(len);
+      }
+
+      @Override
+      protected CloseableByteSource doBuild() throws IOException {
+        byte[] data = output.toByteArray();
+        return new CloseableDelegateByteSource(ByteSource.wrap(data), data.length) {
+          @Override
+          protected synchronized void innerClose() throws IOException {
+            super.innerClose();
+            updateUsage(-data.length);
+          }
+        };
       }
     };
   }

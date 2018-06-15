@@ -28,7 +28,7 @@ public class OverflowToDiskByteStorageFactory implements ByteStorageFactory {
   /**
    * Creates a new factory with an optional in-memory size and a temporary directory for overflow.
    *
-   * @param memoryCacheSizeInBytes how many bytes to keep in memory? If {@code nul} then a default
+   * @param memoryCacheSizeInBytes how many bytes to keep in memory? If {@code null} then a default
    *     value will be used
    * @param temporaryDirectoryFactory a factory that creates temporary directories that will be used
    *     for overflow of the {@link ByteStorage} instances created by this factory

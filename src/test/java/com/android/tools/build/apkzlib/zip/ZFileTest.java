@@ -31,6 +31,7 @@ import static org.junit.Assert.fail;
 
 import com.android.tools.build.apkzlib.bytestorage.ByteStorage;
 import com.android.tools.build.apkzlib.bytestorage.ByteStorageFactory;
+import com.android.tools.build.apkzlib.bytestorage.CloseableByteSourceFromOutputStreamBuilder;
 import com.android.tools.build.apkzlib.bytestorage.InMemoryByteStorageFactory;
 import com.android.tools.build.apkzlib.zip.compress.DeflateExecutionCompressor;
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
@@ -1858,8 +1859,8 @@ public class ZFileTest {
     }
 
     @Override
-    public CloseableByteSource fromStream(ByteArrayOutputStream stream) throws IOException {
-      return delegate.fromStream(stream);
+    public CloseableByteSourceFromOutputStreamBuilder makeBuilder() throws IOException {
+      return delegate.makeBuilder();
     }
 
     @Override

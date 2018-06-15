@@ -4,7 +4,6 @@ import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
 import com.google.common.annotations.VisibleForTesting;
 
 import com.google.common.io.ByteSource;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
@@ -20,7 +19,7 @@ import java.util.Optional;
  * the limit by the size of one source. That is because sources are always loaded into memory before
  * the storage decides to flush them to disk.
  */
-class OverflowToDiskByteStorage implements ByteStorage {
+public class OverflowToDiskByteStorage implements ByteStorage {
 
   /** Size of the default memory cache. */
   private static final long DEFAULT_MEMORY_CACHE_BYTES = 50 * 1024 * 1024;
@@ -85,12 +84,23 @@ class OverflowToDiskByteStorage implements ByteStorage {
   }
 
   @Override
-  public CloseableByteSource fromStream(ByteArrayOutputStream stream) throws IOException {
-    CloseableByteSource memSource =
-        new LruTrackedCloseableByteSource(memoryStorage.fromStream(stream), memorySourcesTracker);
-    checkMaxUsage();
-    reviewSources();
-    return memSource;
+  public CloseableByteSourceFromOutputStreamBuilder makeBuilder() throws IOException {
+    CloseableByteSourceFromOutputStreamBuilder memBuilder = memoryStorage.makeBuilder();
+    return new AbstractCloseableByteSourceFromOutputStreamBuilder() {
+      @Override
+      protected void doWrite(byte[] b, int off, int len) throws IOException {
+        memBuilder.write(b, off, len);
+      }
+
+      @Override
+      protected CloseableByteSource doBuild() throws IOException {
+        CloseableByteSource memSource =
+            new LruTrackedCloseableByteSource(memBuilder.build(), memorySourcesTracker);
+        checkMaxUsage();
+        reviewSources();
+        return memSource;
+      }
+    };
   }
 
   @Override
@@ -121,7 +131,8 @@ class OverflowToDiskByteStorage implements ByteStorage {
 
   /** Checks if any of the sources needs to be written to disk or loaded into memory. */
   private synchronized void reviewSources() throws IOException {
-    if (memoryStorage.getBytesUsed() > memoryCacheSize) {
+    // Move data from memory to disk until we have at most memoryCacheSize bytes in memory.
+    while (memoryStorage.getBytesUsed() > memoryCacheSize) {
       Optional<LruTrackedCloseableByteSource> last = memorySourcesTracker.last();
       if (last.isPresent()) {
         LruTrackedCloseableByteSource lastSource = last.get();
