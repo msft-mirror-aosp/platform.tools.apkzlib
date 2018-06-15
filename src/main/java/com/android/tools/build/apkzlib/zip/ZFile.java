@@ -61,7 +61,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
@@ -789,7 +788,8 @@ public class ZFile implements Closeable {
     directFullyRead(eocd.getDirectoryOffset(), directoryData);
 
     CentralDirectory directory =
-        CentralDirectory.makeFromData(ByteBuffer.wrap(directoryData), eocd.getTotalRecords(), this);
+        CentralDirectory.makeFromData(
+            ByteBuffer.wrap(directoryData), eocd.getTotalRecords(), this, storage);
     if (eocd.getDirectorySize() > 0) {
       directoryEntry =
           map.add(
@@ -1639,7 +1639,7 @@ public class ZFile implements Closeable {
      */
     Verify.verify(newFileData.getOffset() == -1);
     return new StoredEntry(
-        newFileData, this, createSources(mayCompress, source, compressInfo, newFileData));
+        newFileData, this, createSources(mayCompress, source, compressInfo, newFileData), storage);
   }
 
   /**
@@ -1955,7 +1955,7 @@ public class ZFile implements Closeable {
         /*
          * Add will replace any current entry with the same name.
          */
-        StoredEntry newEntry = new StoredEntry(newFileData, this, newSource);
+        StoredEntry newEntry = new StoredEntry(newFileData, this, newSource, storage);
         add(newEntry);
       }
     }
@@ -2102,7 +2102,7 @@ public class ZFile implements Closeable {
     /*
      * Add the new file. This will replace the existing one.
      */
-    StoredEntry newEntry = new StoredEntry(clonedCdh, this, newSource);
+    StoredEntry newEntry = new StoredEntry(clonedCdh, this, newSource, storage);
     add(newEntry);
     return true;
   }
@@ -2329,7 +2329,7 @@ public class ZFile implements Closeable {
   /**
    * Adds all files and directories recursively.
    *
-   * <p>Equivalent to calling {@link #addAllRecursively(File, Function)} using a function that
+   * <p>Equivalent to calling {@link #addAllRecursively(File, Predicate)} using a predicate that
    * always returns {@code true}
    *
    * @param file a file or directory; if it is a directory, all files and directories will be added
@@ -2636,6 +2636,16 @@ public class ZFile implements Closeable {
   public boolean hasPendingChangesWithWait() throws IOException {
     processAllReadyEntriesWithWait();
     return dirty;
+  }
+
+  /**
+   * Obtains the storage used by the zip to store data.
+   *
+   * @return the storage object that should only be used to query data; using this storage for any
+   *     purposes other than statistics may have undefined results
+   */
+  public ByteStorage getStorage() {
+    return storage;
   }
 
   /** Hint to where files should be positioned. */

@@ -5,7 +5,6 @@ import com.google.common.annotations.VisibleForTesting;
 
 import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -52,15 +51,24 @@ class TemporaryDirectoryStorage implements ByteStorage {
   }
 
   @Override
-  public CloseableByteSource fromStream(ByteArrayOutputStream stream) throws IOException {
+  public CloseableByteSourceFromOutputStreamBuilder makeBuilder() throws IOException {
     File temporaryFile = temporaryDirectory.newFile();
-    try (FileOutputStream output = new FileOutputStream(temporaryFile)) {
-      output.write(stream.toByteArray());
-    }
+    return new AbstractCloseableByteSourceFromOutputStreamBuilder() {
+      private final FileOutputStream output = new FileOutputStream(temporaryFile);
 
-    long size = temporaryFile.length();
-    incrementBytesUsed(size);
-    return new TemporaryFileCloseableByteSource(temporaryFile, () -> incrementBytesUsed(-size));
+      @Override
+      protected void doWrite(byte[] b, int off, int len) throws IOException {
+        output.write(b, off, len);
+        incrementBytesUsed(len);
+      }
+
+      @Override
+      protected CloseableByteSource doBuild() throws IOException {
+        output.close();
+        long size = temporaryFile.length();
+        return new TemporaryFileCloseableByteSource(temporaryFile, () -> incrementBytesUsed(-size));
+      }
+    };
   }
 
   @Override
