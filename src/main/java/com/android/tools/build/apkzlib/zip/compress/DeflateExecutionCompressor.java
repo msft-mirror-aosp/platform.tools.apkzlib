@@ -17,11 +17,11 @@
 package com.android.tools.build.apkzlib.zip.compress;
 
 import com.android.tools.build.apkzlib.bytestorage.ByteStorage;
+import com.android.tools.build.apkzlib.bytestorage.CloseableByteSourceFromOutputStreamBuilder;
 import com.android.tools.build.apkzlib.zip.CompressionMethod;
 import com.android.tools.build.apkzlib.zip.CompressionResult;
 import com.android.tools.build.apkzlib.zip.utils.ByteTracker;
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
-import java.io.ByteArrayOutputStream;
 import java.util.concurrent.Executor;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
@@ -52,15 +52,16 @@ public class DeflateExecutionCompressor extends ExecutorCompressor {
   @Override
   protected CompressionResult immediateCompress(CloseableByteSource source, ByteStorage storage)
       throws Exception {
-    ByteArrayOutputStream output = new ByteArrayOutputStream();
     Deflater deflater = new Deflater(level, true);
+    CloseableByteSourceFromOutputStreamBuilder resultBuilder = storage.makeBuilder();
 
-    try (DeflaterOutputStream dos = new DeflaterOutputStream(output, deflater)) {
+    try (DeflaterOutputStream dos = new DeflaterOutputStream(resultBuilder, deflater)) {
       dos.write(source.read());
     }
 
-    CloseableByteSource result = storage.fromStream(output);
+    CloseableByteSource result = resultBuilder.build();
     if (result.size() >= source.size()) {
+      result.close();
       return new CompressionResult(source, CompressionMethod.STORE, source.size());
     } else {
       return new CompressionResult(result, CompressionMethod.DEFLATE, result.size());

@@ -102,17 +102,15 @@ class SwitchableDelegateCloseableByteSource extends CloseableByteSource {
     delegate = source;
 
     // A bit of trickery. We want to call switchStream for all streams. switchStream will
-    // successfully switch the stream even it it throws an exception (if it does, it means it
+    // successfully switch the stream even if it throws an exception (if it does, it means it
     // failed to close the old stream). So we want to continue switching and recording all
     // exceptions. Closer() has that logic already so we register each stream switch as a close
     // operation.
     try (Closer closer = Closer.create()) {
       for (int i = 0; i < nonClosedStreams.size(); i++) {
-        final int ii = i;
-        closer.register(
-            () -> {
-              nonClosedStreams.get(ii).switchStream(switchStreams.get(ii));
-            });
+        SwitchableDelegateInputStream nonClosedStream = nonClosedStreams.get(i);
+        InputStream switchStream = switchStreams.get(i);
+        closer.register(() -> nonClosedStream.switchStream(switchStream));
       }
 
       closer.register(oldDelegate);

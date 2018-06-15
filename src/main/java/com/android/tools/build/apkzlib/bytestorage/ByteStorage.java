@@ -18,7 +18,6 @@ package com.android.tools.build.apkzlib.bytestorage;
 
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
 import com.google.common.io.ByteSource;
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,13 +38,14 @@ public interface ByteStorage extends Closeable {
   CloseableByteSource fromStream(InputStream stream) throws IOException;
 
   /**
-   * Creates a new byte source by snapshotting the provided stream.
+   * Creates a builder that is an output stream and can create a byte source.
    *
-   * @param stream the stream with the data
-   * @return a byte source containing the cached data from the given stream
-   * @throws IOException failed to read the stream
+   * @return a builder where data can be written to and a {@link CloseableByteSource} can eventually
+   *     be obtained from
+   * @throws IOException failed to create the builder; this may happen if the builder require some
+   *     preparation such as temporary storage allocation that may fail
    */
-  CloseableByteSource fromStream(ByteArrayOutputStream stream) throws IOException;
+  CloseableByteSourceFromOutputStreamBuilder makeBuilder() throws IOException;
 
   /**
    * Creates a new byte source from another byte source.
