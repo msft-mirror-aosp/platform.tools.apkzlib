@@ -17,6 +17,7 @@
 package com.android.tools.build.apkzlib.zip;
 
 import com.android.tools.build.apkzlib.bytestorage.ByteStorageFactory;
+import com.android.tools.build.apkzlib.bytestorage.ChunkBasedByteStorageFactory;
 import com.android.tools.build.apkzlib.bytestorage.OverflowToDiskByteStorageFactory;
 import com.android.tools.build.apkzlib.bytestorage.TemporaryDirectory;
 import com.android.tools.build.apkzlib.zip.compress.DeflateExecutionCompressor;
@@ -51,7 +52,8 @@ public class ZFileOptions {
   /** Creates a new options object. All options are set to their defaults. */
   public ZFileOptions() {
     storageFactory =
-        new OverflowToDiskByteStorageFactory(TemporaryDirectory::newSystemTemporaryDirectory);
+        new ChunkBasedByteStorageFactory(
+            new OverflowToDiskByteStorageFactory(TemporaryDirectory::newSystemTemporaryDirectory));
     compressor = new DeflateExecutionCompressor(Runnable::run, Deflater.DEFAULT_COMPRESSION);
     alignmentRule = AlignmentRules.compose();
     verifyLogFactory = VerifyLogs::devNull;
