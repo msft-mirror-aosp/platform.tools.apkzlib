@@ -46,6 +46,30 @@ public class ByteStorageTest {
           {new OverflowToDiskByteStorage(0, TemporaryDirectory::newSystemTemporaryDirectory)},
           {new OverflowToDiskByteStorage(10, TemporaryDirectory::newSystemTemporaryDirectory)},
           {new OverflowToDiskByteStorage(1000, TemporaryDirectory::newSystemTemporaryDirectory)},
+          {new ChunkBasedByteStorage(10, new InMemoryByteStorage())},
+          {new ChunkBasedByteStorage(1000, new InMemoryByteStorage())},
+          {
+            new ChunkBasedByteStorage(
+                10,
+                new OverflowToDiskByteStorage(10, TemporaryDirectory::newSystemTemporaryDirectory))
+          },
+          {
+            new ChunkBasedByteStorage(
+                1000,
+                new OverflowToDiskByteStorage(10, TemporaryDirectory::newSystemTemporaryDirectory))
+          },
+          {
+            new ChunkBasedByteStorage(
+                10,
+                new OverflowToDiskByteStorage(
+                    1000, TemporaryDirectory::newSystemTemporaryDirectory))
+          },
+          {
+            new ChunkBasedByteStorage(
+                1000,
+                new OverflowToDiskByteStorage(
+                    1000, TemporaryDirectory::newSystemTemporaryDirectory))
+          },
         });
   }
 
