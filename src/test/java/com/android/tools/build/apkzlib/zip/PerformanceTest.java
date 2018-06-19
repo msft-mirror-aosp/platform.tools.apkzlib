@@ -1,6 +1,7 @@
 package com.android.tools.build.apkzlib.zip;
 
 import com.android.tools.build.apkzlib.bytestorage.ByteStorageFactory;
+import com.android.tools.build.apkzlib.bytestorage.ChunkBasedByteStorageFactory;
 import com.android.tools.build.apkzlib.bytestorage.InMemoryByteStorageFactory;
 import com.android.tools.build.apkzlib.bytestorage.OverflowToDiskByteStorageFactory;
 import com.android.tools.build.apkzlib.bytestorage.TemporaryDirectoryFactory;
@@ -108,6 +109,32 @@ public class PerformanceTest {
                 100L * 1024 * 1024, TemporaryDirectoryFactory.fixed(temporaryFolder.newFolder())),
             compressible,
             nonCompressible);
+    long chunk10KB =
+        benchmark(
+            new ChunkBasedByteStorageFactory(
+                new OverflowToDiskByteStorageFactory(
+                    10L * 1024, TemporaryDirectoryFactory.fixed(temporaryFolder.newFolder())),
+                10L * 1024),
+            compressible,
+            nonCompressible);
+    long chunk10MB =
+        benchmark(
+            new ChunkBasedByteStorageFactory(
+                new OverflowToDiskByteStorageFactory(
+                    10L * 1024 * 1024,
+                    TemporaryDirectoryFactory.fixed(temporaryFolder.newFolder())),
+                10L * 1024 * 1024),
+            compressible,
+            nonCompressible);
+    long chunk100MB =
+        benchmark(
+            new ChunkBasedByteStorageFactory(
+                new OverflowToDiskByteStorageFactory(
+                    100L * 1024 * 1024,
+                    TemporaryDirectoryFactory.fixed(temporaryFolder.newFolder())),
+                100L * 1024 * 1024),
+            compressible,
+            nonCompressible);
 
     System.out.println(
         compressible.smallCount
@@ -130,7 +157,13 @@ public class PerformanceTest {
             + " "
             + disk10MB
             + " "
-            + disk100MB);
+            + disk100MB
+            + " "
+            + chunk10KB
+            + " "
+            + chunk10MB
+            + " "
+            + chunk100MB);
   }
 
   @Ignore("This test is only useful when run manually to check the results.")
