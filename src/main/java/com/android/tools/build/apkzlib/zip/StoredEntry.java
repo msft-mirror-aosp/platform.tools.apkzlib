@@ -16,12 +16,12 @@
 
 package com.android.tools.build.apkzlib.zip;
 
+import com.android.tools.build.apkzlib.bytestorage.ByteStorage;
+import com.android.tools.build.apkzlib.bytestorage.CloseableByteSourceFromOutputStreamBuilder;
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
-import com.android.tools.build.apkzlib.zip.utils.CloseableDelegateByteSource;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
-import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Ints;
 import java.io.BufferedInputStream;
@@ -148,6 +148,9 @@ public class StoredEntry {
   /** Verify log for the entry. */
   private final VerifyLog verifyLog;
 
+  /** Storage used to create buffers when loading storage into memory. */
+  private final ByteStorage storage;
+
   /**
    * Creates a new stored entry.
    *
@@ -159,12 +162,16 @@ public class StoredEntry {
    * @throws IOException failed to create the entry
    */
   StoredEntry(
-      CentralDirectoryHeader header, ZFile file, @Nullable ProcessedAndRawByteSources source)
+      CentralDirectoryHeader header,
+      ZFile file,
+      @Nullable ProcessedAndRawByteSources source,
+      ByteStorage storage)
       throws IOException {
     cdh = header;
     this.file = file;
     deleted = false;
     verifyLog = file.makeVerifyLog();
+    this.storage = storage;
 
     if (header.getOffset() >= 0) {
       readLocalHeader();
@@ -582,13 +589,18 @@ public class StoredEntry {
       return;
     }
 
-    ProcessedAndRawByteSources oldSource = source;
-    byte[] rawContents = oldSource.getRawByteSource().read();
-    source =
-        createSourcesFromRawContents(
-            new CloseableDelegateByteSource(ByteSource.wrap(rawContents), rawContents.length));
-    cdh.setOffset(-1);
-    oldSource.close();
+    CloseableByteSourceFromOutputStreamBuilder rawBuilder = storage.makeBuilder();
+    try (InputStream input = source.getRawByteSource().openStream()) {
+      ByteStreams.copy(input, rawBuilder);
+    }
+
+    CloseableByteSource newRaw = rawBuilder.build();
+    ProcessedAndRawByteSources newSources = createSourcesFromRawContents(newRaw);
+
+    try (ProcessedAndRawByteSources oldSource = source) {
+      source = newSources;
+      cdh.setOffset(-1);
+    }
   }
 
   /**

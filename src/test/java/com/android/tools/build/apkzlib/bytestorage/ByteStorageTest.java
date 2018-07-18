@@ -21,7 +21,6 @@ import static com.google.common.truth.Truth.assertThat;
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
 import com.google.common.io.ByteSource;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -47,6 +46,30 @@ public class ByteStorageTest {
           {new OverflowToDiskByteStorage(0, TemporaryDirectory::newSystemTemporaryDirectory)},
           {new OverflowToDiskByteStorage(10, TemporaryDirectory::newSystemTemporaryDirectory)},
           {new OverflowToDiskByteStorage(1000, TemporaryDirectory::newSystemTemporaryDirectory)},
+          {new ChunkBasedByteStorage(10, new InMemoryByteStorage())},
+          {new ChunkBasedByteStorage(1000, new InMemoryByteStorage())},
+          {
+            new ChunkBasedByteStorage(
+                10,
+                new OverflowToDiskByteStorage(10, TemporaryDirectory::newSystemTemporaryDirectory))
+          },
+          {
+            new ChunkBasedByteStorage(
+                1000,
+                new OverflowToDiskByteStorage(10, TemporaryDirectory::newSystemTemporaryDirectory))
+          },
+          {
+            new ChunkBasedByteStorage(
+                10,
+                new OverflowToDiskByteStorage(
+                    1000, TemporaryDirectory::newSystemTemporaryDirectory))
+          },
+          {
+            new ChunkBasedByteStorage(
+                1000,
+                new OverflowToDiskByteStorage(
+                    1000, TemporaryDirectory::newSystemTemporaryDirectory))
+          },
         });
   }
 
@@ -67,12 +90,12 @@ public class ByteStorageTest {
 
   @Test
   public void createFromByteArrayOutputStream() throws IOException {
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    outputStream.write(1);
-    outputStream.write(2);
-    outputStream.write(3);
+    CloseableByteSourceFromOutputStreamBuilder bsBuilder = storage.makeBuilder();
+    bsBuilder.write(1);
+    bsBuilder.write(2);
+    bsBuilder.write(3);
 
-    try (CloseableByteSource bs = storage.fromStream(outputStream)) {
+    try (CloseableByteSource bs = bsBuilder.build()) {
       assertThat(bs.size()).isEqualTo(3);
 
       InputStream sourceStream = bs.openStream();

@@ -16,6 +16,7 @@
 
 package com.android.tools.build.apkzlib.zip;
 
+import com.android.tools.build.apkzlib.bytestorage.ByteStorage;
 import com.android.tools.build.apkzlib.utils.CachedSupplier;
 import com.android.tools.build.apkzlib.zip.utils.MsDosDateTimeUtils;
 import com.google.common.annotations.VisibleForTesting;
@@ -190,11 +191,13 @@ class CentralDirectory {
    * @param count the number of entries expected in the central directory (usually read from the
    *     {@link Eocd}).
    * @param file the zip file this central directory belongs to
+   * @param storage the storage used to generate sources with entry data
    * @return the central directory
    * @throws IOException failed to read data from the zip, or the central directory is corrupted or
    *     has unsupported features
    */
-  static CentralDirectory makeFromData(ByteBuffer bytes, int count, ZFile file) throws IOException {
+  static CentralDirectory makeFromData(ByteBuffer bytes, int count, ZFile file, ByteStorage storage)
+      throws IOException {
     Preconditions.checkNotNull(bytes, "bytes == null");
     Preconditions.checkArgument(count >= 0, "count < 0");
 
@@ -202,7 +205,7 @@ class CentralDirectory {
 
     for (int i = 0; i < count; i++) {
       try {
-        directory.readEntry(bytes);
+        directory.readEntry(bytes, storage);
       } catch (IOException e) {
         throw new IOException(
             "Failed to read directory entry index "
@@ -244,10 +247,11 @@ class CentralDirectory {
    * @param bytes the central directory's data, positioned starting at the beginning of the next
    *     entry to read; when finished, the buffer's position will be at the first byte after the
    *     entry
+   * @param storage the storage used to generate sources to store entry data
    * @throws IOException failed to read the directory entry, either because of an I/O error, because
    *     it is corrupt or contains unsupported features
    */
-  private void readEntry(ByteBuffer bytes) throws IOException {
+  private void readEntry(ByteBuffer bytes, ByteStorage storage) throws IOException {
     F_SIGNATURE.verify(bytes);
     long madeBy = F_MADE_BY.read(bytes);
 
@@ -344,7 +348,7 @@ class CentralDirectory {
     StoredEntry entry;
 
     try {
-      entry = new StoredEntry(centralDirectoryHeader, file, null);
+      entry = new StoredEntry(centralDirectoryHeader, file, null, storage);
     } catch (IOException e) {
       throw new IOException("Failed to read stored entry '" + fileName + "'.", e);
     }
