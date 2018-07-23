@@ -7,7 +7,6 @@ import java.io.IOException;
  * Factory that creates temporary directories. {@link
  * TemporaryDirectory#newSystemTemporaryDirectory()} conforms to this interface.
  */
-@FunctionalInterface
 public interface TemporaryDirectoryFactory {
 
   /**

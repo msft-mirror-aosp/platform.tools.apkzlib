@@ -16,11 +16,11 @@
 
 package com.android.tools.build.apkzlib.zfile;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import javax.annotation.Nullable;
 
 /** Creates or updates APKs based on provided entries. */

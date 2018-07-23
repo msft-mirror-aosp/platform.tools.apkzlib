@@ -2,11 +2,9 @@ package com.android.tools.build.apkzlib.bytestorage;
 
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
 import com.google.common.annotations.VisibleForTesting;
-
 import com.google.common.io.ByteSource;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Optional;
 
 /**
  * Byte storage that keeps data in memory up to a certain size. After that, older sources are moved
@@ -28,7 +26,7 @@ public class OverflowToDiskByteStorage implements ByteStorage {
   private final InMemoryByteStorage memoryStorage;
 
   /** Disk-based storage. */
-  @VisibleForTesting
+  @VisibleForTesting // private otherwise.
   final TemporaryDirectoryStorage diskStorage;
 
   /** Tracker that keeps all memory sources. */
@@ -133,9 +131,9 @@ public class OverflowToDiskByteStorage implements ByteStorage {
   private synchronized void reviewSources() throws IOException {
     // Move data from memory to disk until we have at most memoryCacheSize bytes in memory.
     while (memoryStorage.getBytesUsed() > memoryCacheSize) {
-      Optional<LruTrackedCloseableByteSource> last = memorySourcesTracker.last();
-      if (last.isPresent()) {
-        LruTrackedCloseableByteSource lastSource = last.get();
+      LruTrackedCloseableByteSource last = memorySourcesTracker.last();
+      if (last != null) {
+        LruTrackedCloseableByteSource lastSource = last;
         lastSource.move(diskStorage);
       }
     }

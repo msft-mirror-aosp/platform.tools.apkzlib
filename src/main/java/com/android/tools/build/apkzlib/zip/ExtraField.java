@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 /**
@@ -114,11 +113,13 @@ public class ExtraField {
    */
   @Nullable
   public Segment getSingleSegment(int headerId) throws IOException {
-    List<Segment> found =
-        getSegments()
-            .stream()
-            .filter(s -> s.getHeaderId() == headerId)
-            .collect(Collectors.toList());
+    List<Segment> found = new ArrayList<>();
+    for (Segment s : getSegments()) {
+      if (s.getHeaderId() == headerId) {
+        found.add(s);
+      }
+    }
+
     if (found.isEmpty()) {
       return null;
     } else if (found.size() == 1) {
@@ -253,7 +254,6 @@ public class ExtraField {
   }
 
   /** Factory that creates a segment. */
-  @FunctionalInterface
   interface SegmentFactory {
 
     /**

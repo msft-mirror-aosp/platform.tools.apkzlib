@@ -1,7 +1,6 @@
 package com.android.tools.build.apkzlib.bytestorage;
 
 import com.google.common.annotations.VisibleForTesting;
-
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -29,7 +28,7 @@ class SwitchableDelegateInputStream extends InputStream {
   private long currentOffset;
 
   /** Have we reached the end of stream? */
-  @VisibleForTesting
+  @VisibleForTesting // private otherwise.
   boolean endOfStreamReached;
 
   /**

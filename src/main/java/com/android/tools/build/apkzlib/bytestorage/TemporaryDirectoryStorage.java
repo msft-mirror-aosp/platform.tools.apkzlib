@@ -2,7 +2,6 @@ package com.android.tools.build.apkzlib.bytestorage;
 
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
 import com.google.common.annotations.VisibleForTesting;
-
 import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import java.io.File;
@@ -17,7 +16,7 @@ import java.io.InputStream;
 class TemporaryDirectoryStorage implements ByteStorage {
 
   /** Temporary directory to use. */
-  @VisibleForTesting
+  @VisibleForTesting // private otherwise.
   final TemporaryDirectory temporaryDirectory;
 
   /** Number of bytes currently used. */

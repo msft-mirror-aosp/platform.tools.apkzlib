@@ -16,9 +16,9 @@
 
 package com.android.tools.build.apkzlib.zfile;
 
+import com.android.tools.build.apkzlib.utils.IOExceptionWrapper;
 import com.android.tools.build.apkzlib.zip.ZFileOptions;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 
 /** Creates instances of {@link ApkZFileCreator}. */
 public class ApkZFileCreatorFactory implements ApkCreatorFactory {
@@ -40,7 +40,7 @@ public class ApkZFileCreatorFactory implements ApkCreatorFactory {
     try {
       return new ApkZFileCreator(creationData, options);
     } catch (IOException e) {
-      throw new UncheckedIOException(e);
+      throw new IOExceptionWrapper(e);
     }
   }
 }

@@ -1,7 +1,6 @@
 package com.android.tools.build.apkzlib.bytestorage;
 
 import com.google.common.annotations.VisibleForTesting;
-
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +22,7 @@ public interface TemporaryDirectory extends Closeable {
   File newFile() throws IOException;
 
   /** Obtains the directory, only useful for tests. */
-  @VisibleForTesting
+  @VisibleForTesting // private otherwise.
   File getDirectory();
 
   /**

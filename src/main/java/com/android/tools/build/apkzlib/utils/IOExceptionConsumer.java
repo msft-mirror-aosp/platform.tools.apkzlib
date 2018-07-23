@@ -17,12 +17,9 @@
 package com.android.tools.build.apkzlib.utils;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.function.Consumer;
 import javax.annotation.Nullable;
 
 /** Consumer that can throw an {@link IOException}. */
-@FunctionalInterface
 public interface IOExceptionConsumer<T> {
 
   /**
@@ -31,19 +28,4 @@ public interface IOExceptionConsumer<T> {
    * @param input the input
    */
   void accept(@Nullable T input) throws IOException;
-
-  /**
-   * Wraps a consumer that may throw an IO Exception throwing an {@code UncheckedIOException}.
-   *
-   * @param c the consumer
-   */
-  static <T> Consumer<T> asConsumer(IOExceptionConsumer<T> c) {
-    return i -> {
-      try {
-        c.accept(i);
-      } catch (IOException e) {
-        throw new UncheckedIOException(e);
-      }
-    };
-  }
 }

@@ -24,7 +24,6 @@ import com.google.common.primitives.Ints;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.StringJoiner;
 import java.util.TreeSet;
 import javax.annotation.Nullable;
 
@@ -566,9 +565,22 @@ class FileUseMap {
 
   @Override
   public String toString() {
-    StringJoiner j = new StringJoiner(", ");
-    map.stream().map(e -> e.getStart() + " - " + e.getEnd() + ": " + e.getStore()).forEach(j::add);
-    return "FileUseMap[" + j.toString() + "]";
+    StringBuilder builder = new StringBuilder();
+    boolean first = true;
+    for (FileUseMapEntry<?> entry : map) {
+      if (first) {
+        first = false;
+      } else {
+        builder.append(", ");
+      }
+
+      builder.append(entry.getStart());
+      builder.append(" - ");
+      builder.append(entry.getEnd());
+      builder.append(": ");
+      builder.append(entry.getStore());
+    }
+    return builder.toString();
   }
 
   /** Algorithms used to position entries in blocks. */

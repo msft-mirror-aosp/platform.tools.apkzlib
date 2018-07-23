@@ -2,7 +2,6 @@ package com.android.tools.build.apkzlib.bytestorage;
 
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
 import com.google.common.annotations.VisibleForTesting;
-
 import com.google.common.io.ByteSource;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,7 +43,7 @@ public class ChunkBasedByteStorage implements ByteStorage {
   }
 
   /** Obtains the byte storage chunks are allocated from. */
-  @VisibleForTesting
+  @VisibleForTesting // private otherwise.
   public ByteStorage getDelegate() {
     return delegate;
   }

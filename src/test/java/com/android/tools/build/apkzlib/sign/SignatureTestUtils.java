@@ -20,6 +20,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import com.android.tools.build.apkzlib.utils.ApkZLibPair;
+import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -28,7 +29,9 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -40,7 +43,6 @@ import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.junit.Assume;
 
 /** Utilities to use signatures in tests. */
 public class SignatureTestUtils {
@@ -66,6 +68,49 @@ public class SignatureTestUtils {
   }
 
   /**
+   * Obtains all signature/certificate pairs that are available in the current environment. Any
+   * exception thrown will be masked under a runtime exception.
+   */
+  public static ApkZLibPair<PrivateKey, X509Certificate>[] getAllSigningData() {
+    List<ApkZLibPair<PrivateKey, X509Certificate>> signingData = new ArrayList<>();
+
+    try {
+      try {
+        signingData.add(SignatureTestUtils.generateSignaturePre18());
+      } catch (NoSuchAlgorithmException e) {
+        // OK, fine, we can't do pre-18 signing. Some platforms do not support the old SHA1withRSA.
+      }
+
+      signingData.add(SignatureTestUtils.generateSignaturePos18());
+    } catch (Exception e) {
+      // Wrap to allow calling in public static final initializer.
+      throw new RuntimeException(e);
+    }
+
+    @SuppressWarnings("unchecked")
+    ApkZLibPair<PrivateKey, X509Certificate>[] array =
+        (ApkZLibPair<PrivateKey, X509Certificate>[]) Array.newInstance(ApkZLibPair.class, 0);
+
+    return signingData.toArray(array);
+  }
+
+  /** Obtains an API level that is valid to use the given private key. */
+  public static int getApiLevelForKey(PrivateKey key) {
+    // SHA-1 + RSA is always available. SHA-256 with ECDSA only on API 21+.
+    if (key.getAlgorithm().equals("EC")) {
+      return 21;
+    } else {
+      return 10;
+    }
+  }
+
+  /** Generates another private key / X509 certificate using the same algorithm as the given key. */
+  public static ApkZLibPair<PrivateKey, X509Certificate> generateAnother(
+      ApkZLibPair<PrivateKey, X509Certificate> signingData) throws Exception {
+    return generateSignature(signingData.v1.getAlgorithm(), signingData.v2.getSigAlgName());
+  }
+
+  /**
    * Generates a private key / certificate.
    *
    * @param sign the asymmetric cypher, <em>e.g.</em>, {@code RSA}
@@ -79,17 +124,12 @@ public class SignatureTestUtils {
     // easy-way-to-generate-a-self-signed-certificate-for-java-security-keystore-using
 
     KeyPairGenerator generator = null;
-    try {
-      if (sign.equals("RSA")) {
-        generator = KeyPairGenerator.getInstance("TSA");
-      } else if (sign.equals("EC")) {
-        generator = KeyPairGenerator.getInstance("EC");
-
-      } else {
-        fail("Algorithm " + sign + " not supported.");
-      }
-    } catch (NoSuchAlgorithmException e) {
-      Assume.assumeNoException("Algorithm " + sign + " not supported.", e);
+    if (sign.equals("RSA")) {
+      generator = KeyPairGenerator.getInstance("RSA");
+    } else if (sign.equals("EC")) {
+      generator = KeyPairGenerator.getInstance("EC");
+    } else {
+      fail("Algorithm " + sign + " not supported.");
     }
 
     assertNotNull(generator);

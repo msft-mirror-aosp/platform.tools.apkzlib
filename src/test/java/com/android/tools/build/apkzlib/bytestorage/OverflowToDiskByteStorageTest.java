@@ -9,37 +9,34 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Assume;
-import org.junit.Test;
+import org.junit.experimental.theories.DataPoints;
+import org.junit.experimental.theories.FromDataPoints;
+import org.junit.experimental.theories.Theories;
+import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
 
-@RunWith(Parameterized.class)
+@RunWith(Theories.class)
 public class OverflowToDiskByteStorageTest {
 
-  @Parameter(0)
-  public Integer memoryCacheSize;
+  @DataPoints("all_sizes")
+  public static final int[] MEMORY_CACHE_SIZE = new int[] {0, 10, 1000};
 
-  private ByteStorage makeStorage() throws IOException {
+  @DataPoints("non_zero_sizes")
+  public static final int[] MEMORY_CACHE_SIZE_NZ =
+      Arrays.copyOfRange(MEMORY_CACHE_SIZE, 1, MEMORY_CACHE_SIZE.length);
+
+  private ByteStorage makeStorage(int memoryCacheSize) throws IOException {
     return new OverflowToDiskByteStorage(
         memoryCacheSize, TemporaryDirectory::newSystemTemporaryDirectory);
   }
 
-  @Parameters
-  public static List<Object[]> getParameters() {
-    // Make sure to keep the values here synchronized with ByteStorageTest.
-    return Arrays.asList(new Object[][] {{0}, {10}, {1000}});
-  }
-
-  @Test
-  public void dataStaysInRamUntilItDoesntFit() throws Exception {
-    Assume.assumeTrue(memoryCacheSize > 0);
-
+  @Theory
+  public void dataStaysInRamUntilItDoesntFit(@FromDataPoints("non_zero_sizes") int memoryCacheSize)
+      throws Exception {
     int magicSize = 7;
 
-    try (OverflowToDiskByteStorage storage = (OverflowToDiskByteStorage) makeStorage()) {
+    try (OverflowToDiskByteStorage storage =
+        (OverflowToDiskByteStorage) makeStorage(memoryCacheSize)) {
       int total = 0;
       while (total < memoryCacheSize) {
         assertThat(storage.getMemoryBytesUsed()).isEqualTo(total);
@@ -66,11 +63,13 @@ public class OverflowToDiskByteStorageTest {
     }
   }
 
-  @Test
-  public void diskDataIsNotLoadedIntoRamAgain() throws Exception {
+  @Theory
+  public void diskDataIsNotLoadedIntoRamAgain(@FromDataPoints("all_sizes") int memoryCacheSize)
+      throws Exception {
     int magicSize = 7;
 
-    try (OverflowToDiskByteStorage storage = (OverflowToDiskByteStorage) makeStorage()) {
+    try (OverflowToDiskByteStorage storage =
+        (OverflowToDiskByteStorage) makeStorage(memoryCacheSize)) {
       int total = 0;
       List<CloseableByteSource> open = new ArrayList<>();
       while (total == 0 || total < memoryCacheSize) {
@@ -92,10 +91,12 @@ public class OverflowToDiskByteStorageTest {
     }
   }
 
-  @Test
-  public void closingOverflowStorageDeletesDirectory() throws Exception {
+  @Theory
+  public void closingOverflowStorageDeletesDirectory(
+      @FromDataPoints("all_sizes") int memoryCacheSize) throws Exception {
     File tempDir;
-    try (OverflowToDiskByteStorage storage = (OverflowToDiskByteStorage) makeStorage()) {
+    try (OverflowToDiskByteStorage storage =
+        (OverflowToDiskByteStorage) makeStorage(memoryCacheSize)) {
       tempDir = storage.diskStorage.temporaryDirectory.getDirectory();
     }
 

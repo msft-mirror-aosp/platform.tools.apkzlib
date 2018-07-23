@@ -18,6 +18,7 @@ package com.android.tools.build.apkzlib.sign;
 
 import com.android.tools.build.apkzlib.utils.CachedSupplier;
 import com.android.tools.build.apkzlib.utils.IOExceptionRunnable;
+import com.android.tools.build.apkzlib.utils.IOExceptionWrapper;
 import com.android.tools.build.apkzlib.zfile.ManifestAttributes;
 import com.android.tools.build.apkzlib.zip.StoredEntry;
 import com.android.tools.build.apkzlib.zip.ZFile;
@@ -27,7 +28,6 @@ import com.google.common.base.Verify;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import javax.annotation.Nullable;
@@ -113,7 +113,7 @@ public class ManifestGenerationExtension {
               try {
                 manifest.write(outBytes);
               } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                throw new IOExceptionWrapper(e);
               }
 
               return outBytes.toByteArray();

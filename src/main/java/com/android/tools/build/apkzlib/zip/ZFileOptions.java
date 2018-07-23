@@ -22,7 +22,7 @@ import com.android.tools.build.apkzlib.bytestorage.OverflowToDiskByteStorageFact
 import com.android.tools.build.apkzlib.bytestorage.TemporaryDirectory;
 import com.android.tools.build.apkzlib.zip.compress.DeflateExecutionCompressor;
 import com.android.tools.build.apkzlib.zip.utils.ByteTracker;
-import java.util.function.Supplier;
+import com.google.common.base.Supplier;
 import java.util.zip.Deflater;
 
 /** Options to create a {@link ZFile}. */

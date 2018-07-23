@@ -16,7 +16,7 @@
 
 package com.android.tools.build.apkzlib.utils;
 
-import java.util.function.Supplier;
+import com.google.common.base.Supplier;
 
 /**
  * Supplier that will cache a computed value and always supply the same value. It can be used to

@@ -17,6 +17,7 @@
 package com.android.tools.build.apkzlib.zip;
 
 import com.android.tools.build.apkzlib.utils.CachedSupplier;
+import com.android.tools.build.apkzlib.utils.IOExceptionWrapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
@@ -253,7 +254,7 @@ class Eocd {
 
       return out.array();
     } catch (IOException e) {
-      throw new UncheckedIOException(e);
+      throw new IOExceptionWrapper(e);
     }
   }
 }

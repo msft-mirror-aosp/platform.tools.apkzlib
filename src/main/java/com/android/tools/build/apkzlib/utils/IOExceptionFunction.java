@@ -16,13 +16,11 @@
 
 package com.android.tools.build.apkzlib.utils;
 
+import com.google.common.base.Function;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.function.Function;
 import javax.annotation.Nullable;
 
 /** Function that can throw an I/O Exception */
-@FunctionalInterface
 public interface IOExceptionFunction<F, T> {
 
   /**
@@ -35,7 +33,7 @@ public interface IOExceptionFunction<F, T> {
   T apply(@Nullable F input) throws IOException;
 
   /**
-   * Wraps a function that may throw an IO Exception throwing an {@code UncheckedIOException}.
+   * Wraps a function that may throw an IO Exception throwing an {@link IOExceptionWrapper}.
    *
    * @param f the function
    */
@@ -44,7 +42,7 @@ public interface IOExceptionFunction<F, T> {
       try {
         return f.apply(i);
       } catch (IOException e) {
-        throw new UncheckedIOException(e);
+        throw new IOExceptionWrapper(e);
       }
     };
   }

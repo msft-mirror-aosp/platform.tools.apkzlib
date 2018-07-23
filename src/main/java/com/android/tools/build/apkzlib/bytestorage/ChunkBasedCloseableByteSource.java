@@ -36,7 +36,9 @@ class ChunkBasedCloseableByteSource extends CloseableDelegateByteSource {
   @Override
   protected synchronized void innerClose() throws IOException {
     try (Closer closer = Closer.create()) {
-      sources.forEach(closer::register);
+      for (CloseableByteSource source : sources) {
+        closer.register(source);
+      }
     }
   }
 }

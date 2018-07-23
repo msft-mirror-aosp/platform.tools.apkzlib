@@ -3,9 +3,8 @@ package com.android.tools.build.apkzlib.bytestorage;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import java.util.Comparator;
-import java.util.Optional;
 import java.util.TreeSet;
+import javax.annotation.Nullable;
 
 /**
  * A tracker that keeps a list of the last-recently-used objects of type {@code T}. The tracker
@@ -37,7 +36,7 @@ class LruTracker<T> {
   LruTracker() {
     currentTime = 1;
     objectToAccessTime = HashBiMap.create();
-    accessTimes = new TreeSet<>(Comparator.reverseOrder());
+    accessTimes = new TreeSet<>((i0, i1) -> i1 - i0);
   }
 
   /** Starts tracking an object. This object's will be the most recently used. */
@@ -75,11 +74,12 @@ class LruTracker<T> {
    * Obtains the last element, the one last accessed earliest. Will return empty if there are no
    * objects being tracked.
    */
-  synchronized Optional<T> last() {
+  @Nullable
+  synchronized T last() {
     if (accessTimes.isEmpty()) {
-      return Optional.empty();
+      return null;
     }
 
-    return Optional.of(objectToAccessTime.inverse().get(accessTimes.last()));
+    return objectToAccessTime.inverse().get(accessTimes.last());
   }
 }

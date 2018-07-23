@@ -19,10 +19,10 @@ package com.android.tools.build.apkzlib.zfile;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
 import java.io.File;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.function.Predicate;
 import javax.annotation.Nullable;
 
 /** Factory that creates instances of {@link ApkCreator}. */

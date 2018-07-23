@@ -17,10 +17,8 @@
 package com.android.tools.build.apkzlib.utils;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 
 /** Runnable that can throw I/O exceptions. */
-@FunctionalInterface
 public interface IOExceptionRunnable {
 
   /**
@@ -35,12 +33,12 @@ public interface IOExceptionRunnable {
    *
    * @param r the runnable
    */
-  public static Runnable asRunnable(IOExceptionRunnable r) {
+  static Runnable asRunnable(IOExceptionRunnable r) {
     return () -> {
       try {
         r.run();
       } catch (IOException e) {
-        throw new UncheckedIOException(e);
+        throw new IOExceptionWrapper(e);
       }
     };
   }

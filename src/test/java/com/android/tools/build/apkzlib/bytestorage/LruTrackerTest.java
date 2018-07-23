@@ -59,7 +59,7 @@ public class LruTrackerTest {
   @Test
   public void lastWithoutAnyObjectsIsEmpty() {
     LruTracker<Object> tracker = new LruTracker<>();
-    assertThat(tracker.last().isPresent()).isFalse();
+    assertThat(tracker.last()).isNull();
   }
 
   @Test
@@ -67,7 +67,7 @@ public class LruTrackerTest {
     LruTracker<Object> tracker = new LruTracker<>();
     Object object1 = new Object();
     tracker.track(object1);
-    assertThat(tracker.last().get()).isSameAs(object1);
+    assertThat(tracker.last()).isEqualTo(object1);
   }
 
   @Test
@@ -77,7 +77,7 @@ public class LruTrackerTest {
     tracker.track(object1);
     Object object2 = new Object();
     tracker.track(object2);
-    assertThat(tracker.last().get()).isSameAs(object1);
+    assertThat(tracker.last()).isEqualTo(object1);
   }
 
   @Test

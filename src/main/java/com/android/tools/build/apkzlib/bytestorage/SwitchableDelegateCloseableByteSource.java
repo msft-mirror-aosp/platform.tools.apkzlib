@@ -39,7 +39,10 @@ class SwitchableDelegateCloseableByteSource extends CloseableByteSource {
     closed = true;
 
     try (Closer closer = Closer.create()) {
-      nonClosedStreams.forEach(closer::register);
+      for (SwitchableDelegateInputStream stream : nonClosedStreams) {
+        closer.register(stream);
+      }
+
       nonClosedStreams.clear();
     }
 
@@ -58,7 +61,7 @@ class SwitchableDelegateCloseableByteSource extends CloseableByteSource {
           @Override
           public void close() throws IOException {
             // Remove the stream on close.
-            synchronized (this) {
+            synchronized (SwitchableDelegateCloseableByteSource.this) {
               nonClosedStreams.remove(this);
             }
 

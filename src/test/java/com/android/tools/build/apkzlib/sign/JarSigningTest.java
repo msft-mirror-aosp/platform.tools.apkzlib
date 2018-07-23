@@ -16,7 +16,6 @@
 
 package com.android.tools.build.apkzlib.sign;
 
-import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -26,6 +25,7 @@ import com.android.tools.build.apkzlib.utils.ApkZLibPair;
 import com.android.tools.build.apkzlib.zip.StoredEntry;
 import com.android.tools.build.apkzlib.zip.ZFile;
 import com.google.common.base.Charsets;
+import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -36,18 +36,26 @@ import java.util.Base64;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.experimental.theories.DataPoints;
+import org.junit.experimental.theories.FromDataPoints;
+import org.junit.experimental.theories.Theories;
+import org.junit.experimental.theories.Theory;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
-@RunWith(JUnit4.class)
+@RunWith(Theories.class)
 public class JarSigningTest {
 
   @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-  @Test
-  public void signEmptyJar() throws Exception {
+  @DataPoints("signing_data")
+  public static final ApkZLibPair<PrivateKey, X509Certificate>[] SIGNING_DATA =
+      SignatureTestUtils.getAllSigningData();
+
+  @Theory
+  public void signEmptyJar(
+      @FromDataPoints("signing_data") ApkZLibPair<PrivateKey, X509Certificate> signingData)
+      throws Exception {
     File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
 
     try (ZFile zf = new ZFile(zipFile)) {
@@ -55,9 +63,13 @@ public class JarSigningTest {
       ManifestGenerationExtension manifestExtension = new ManifestGenerationExtension("Me", "Me");
       manifestExtension.register(zf);
 
-      ApkZLibPair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePre18();
-
-      new SigningExtension(12, p.v2, p.v1, true, false).register(zf);
+      new SigningExtension(
+              SignatureTestUtils.getApiLevelForKey(signingData.v1),
+              signingData.v2,
+              signingData.v1,
+              true,
+              false)
+          .register(zf);
     }
 
     try (ZFile verifyZFile = new ZFile(zipFile)) {
@@ -72,10 +84,11 @@ public class JarSigningTest {
     }
   }
 
-  @Test
-  public void signJarWithPrexistingSimpleTextFilePre18() throws Exception {
+  @Theory
+  public void signJarWithPrexistingSimpleTextFile(
+      @FromDataPoints("signing_data") ApkZLibPair<PrivateKey, X509Certificate> signingData)
+      throws Exception {
     File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
-    ApkZLibPair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePre18();
 
     try (ZFile zf1 = new ZFile(zipFile)) {
       ApkZFileTestUtils.addAndroidManifest(zf1);
@@ -86,7 +99,13 @@ public class JarSigningTest {
     try (ZFile zf2 = new ZFile(zipFile)) {
       ManifestGenerationExtension me = new ManifestGenerationExtension("Merry", "Christmas");
       me.register(zf2);
-      new SigningExtension(10, p.v2, p.v1, true, false).register(zf2);
+      new SigningExtension(
+              SignatureTestUtils.getApiLevelForKey(signingData.v1),
+              signingData.v2,
+              signingData.v1,
+              true,
+              false)
+          .register(zf2);
     }
 
     try (ZFile zf3 = new ZFile(zipFile)) {
@@ -102,103 +121,70 @@ public class JarSigningTest {
       Attributes attrs = manifest.getAttributes("directory/file");
       assertNotNull(attrs);
       assertEquals(1, attrs.size());
-      assertEquals("OOQgIEXBissIvva3ydRoaXk29Rk=", attrs.getValue("SHA1-Digest"));
+
+      boolean isSha1 = attrs.getValue("SHA1-Digest") != null;
+
+      // Depending on the signing algorithm, we'll have the digest with SHA-1 or SHA-256.
+      // The values below are base64 encoding of the SHA digest of a file with contents
+      // "useless text". Easy way to get them is to sign a jar manually and check the contents
+      // of MANIFEST.MF.
+      if (isSha1) {
+        assertEquals("OOQgIEXBissIvva3ydRoaXk29Rk=", attrs.getValue("SHA1-Digest"));
+      } else {
+        assertEquals(
+            "QjupZsopQM/01O6+sWHqH64ilMmoBEtljg9VEqN6aI4=", attrs.getValue("SHA-256-Digest"));
+      }
 
       StoredEntry signatureEntry = zf3.get("META-INF/CERT.SF");
       assertNotNull(signatureEntry);
 
       Manifest signature = new Manifest(new ByteArrayInputStream(signatureEntry.read()));
-      assertEquals(3, signature.getMainAttributes().size());
       assertEquals("1.0", signature.getMainAttributes().getValue("Signature-Version"));
       assertEquals("1.0 (Android)", signature.getMainAttributes().getValue("Created-By"));
 
       byte[] manifestTextBytes = manifestEntry.read();
-      byte[] manifestSha1Bytes = Hashing.sha1().hashBytes(manifestTextBytes).asBytes();
-      String manifestSha1 = Base64.getEncoder().encodeToString(manifestSha1Bytes);
-
-      assertEquals(manifestSha1, signature.getMainAttributes().getValue("SHA1-Digest-Manifest"));
+      HashFunction hashFunction = isSha1 ? Hashing.sha1() : Hashing.sha256();
+      byte[] manifestHashBytes = hashFunction.hashBytes(manifestTextBytes).asBytes();
+      String manifestHash = Base64.getEncoder().encodeToString(manifestHashBytes);
 
       Attributes signAttrs = signature.getAttributes("directory/file");
       assertNotNull(signAttrs);
       assertEquals(1, signAttrs.size());
-      assertEquals("LGSOwy4uGcUWoc+ZhS8ukzmf0fY=", signAttrs.getValue("SHA1-Digest"));
 
+      // Depending on the signing algorithm, we'll have the digest hashed with SHA-1 or SHA-256.
+      // The values below are base53 encoding of the SHA digest of the corresponding entry in the
+      // manifest file. Easy way to get them is to sign a jar manually and check the contents of
+      // CERT.SF.
+      if (isSha1) {
+        assertEquals(manifestHash, signature.getMainAttributes().getValue("SHA1-Digest-Manifest"));
+        assertEquals("LGSOwy4uGcUWoc+ZhS8ukzmf0fY=", signAttrs.getValue("SHA1-Digest"));
+      } else {
+        assertEquals(
+            manifestHash, signature.getMainAttributes().getValue("SHA-256-Digest-Manifest"));
+        assertEquals(
+            "dBnaLpqNjmUnLlZF4tNqOcDWL8wy8Tsw1ZYFqTZhjIs=", signAttrs.getValue("SHA-256-Digest"));
+      }
+
+      // Depending on the signing algorithm, we'll have the signature with RSA or ECDSA.
       StoredEntry rsaEntry = zf3.get("META-INF/CERT.RSA");
-      assertNotNull(rsaEntry);
+      if (rsaEntry == null) {
+        StoredEntry ecdsaEntry = zf3.get("META-INF/CERT.EC");
+        assertNotNull(ecdsaEntry);
+      }
     }
   }
 
-  @Test
-  public void signJarWithPrexistingSimpleTextFilePos18() throws Exception {
-    File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
-    try (ZFile zf1 = new ZFile(zipFile)) {
-      ApkZFileTestUtils.addAndroidManifest(zf1);
-      zf1.add(
-          "directory/file", new ByteArrayInputStream("useless text".getBytes(Charsets.US_ASCII)));
-    }
-
-    ApkZLibPair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePos18();
-
-    try (ZFile zf2 = new ZFile(zipFile)) {
-      ManifestGenerationExtension me = new ManifestGenerationExtension("Merry", "Christmas");
-      me.register(zf2);
-      new SigningExtension(21, p.v2, p.v1, true, false).register(zf2);
-    }
-
-    try (ZFile zf3 = new ZFile(zipFile)) {
-      StoredEntry manifestEntry = zf3.get("META-INF/MANIFEST.MF");
-      assertNotNull(manifestEntry);
-
-      Manifest manifest = new Manifest(new ByteArrayInputStream(manifestEntry.read()));
-      assertEquals(3, manifest.getMainAttributes().size());
-      assertEquals("1.0", manifest.getMainAttributes().getValue("Manifest-Version"));
-      assertEquals("Merry", manifest.getMainAttributes().getValue("Built-By"));
-      assertEquals("Christmas", manifest.getMainAttributes().getValue("Created-By"));
-
-      Attributes attrs = manifest.getAttributes("directory/file");
-      assertNotNull(attrs);
-      assertEquals(1, attrs.size());
-      assertEquals(
-          "QjupZsopQM/01O6+sWHqH64ilMmoBEtljg9VEqN6aI4=", attrs.getValue("SHA-256-Digest"));
-
-      StoredEntry signatureEntry = zf3.get("META-INF/CERT.SF");
-      assertNotNull(signatureEntry);
-
-      Manifest signature = new Manifest(new ByteArrayInputStream(signatureEntry.read()));
-      // Depending on where we build, we may get more than these two attributes.
-      assertThat(signature.getMainAttributes().size()).isAtLeast(2);
-      assertEquals("1.0", signature.getMainAttributes().getValue("Signature-Version"));
-      assertEquals("1.0 (Android)", signature.getMainAttributes().getValue("Created-By"));
-
-      byte[] manifestTextBytes = manifestEntry.read();
-      byte[] manifestSha256Bytes = Hashing.sha256().hashBytes(manifestTextBytes).asBytes();
-      String manifestSha256 = Base64.getEncoder().encodeToString(manifestSha256Bytes);
-
-      assertEquals(
-          manifestSha256, signature.getMainAttributes().getValue("SHA-256-Digest-Manifest"));
-
-      Attributes signAttrs = signature.getAttributes("directory/file");
-      assertNotNull(signAttrs);
-      assertEquals(1, signAttrs.size());
-      assertEquals(
-          "dBnaLpqNjmUnLlZF4tNqOcDWL8wy8Tsw1ZYFqTZhjIs=", signAttrs.getValue("SHA-256-Digest"));
-
-      StoredEntry ecdsaEntry = zf3.get("META-INF/CERT.EC");
-      assertNotNull(ecdsaEntry);
-    }
-  }
-
-  @Test
-  public void v2SignAddsApkSigningBlock() throws Exception {
+  @Theory
+  public void v2SignAddsApkSigningBlock(
+      @FromDataPoints("signing_data") ApkZLibPair<PrivateKey, X509Certificate> signingData)
+      throws Exception {
     File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
     try (ZFile zf = new ZFile(zipFile)) {
       ApkZFileTestUtils.addAndroidManifest(zf);
       ManifestGenerationExtension manifestExtension = new ManifestGenerationExtension("Me", "Me");
       manifestExtension.register(zf);
 
-      ApkZLibPair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePre18();
-
-      new SigningExtension(12, p.v2, p.v1, false, true).register(zf);
+      new SigningExtension(12, signingData.v2, signingData.v1, false, true).register(zf);
     }
 
     try (ZFile verifyZFile = new ZFile(zipFile)) {
@@ -210,10 +196,11 @@ public class JarSigningTest {
     }
   }
 
-  @Test
-  public void v1ReSignOnFileChange() throws Exception {
+  @Theory
+  public void v1ReSignOnFileChange(
+      @FromDataPoints("signing_data") ApkZLibPair<PrivateKey, X509Certificate> signingData)
+      throws Exception {
     File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
-    ApkZLibPair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePos18();
 
     byte[] file1Contents = "I am a test file".getBytes(Charsets.US_ASCII);
     String file1Name = "path/to/file1";
@@ -228,7 +215,7 @@ public class JarSigningTest {
       zf1.add(file1Name, new ByteArrayInputStream(file1Contents));
       ManifestGenerationExtension me = new ManifestGenerationExtension(builtBy, createdBy);
       me.register(zf1);
-      new SigningExtension(21, p.v2, p.v1, true, false).register(zf1);
+      new SigningExtension(21, signingData.v2, signingData.v1, true, false).register(zf1);
 
       zf1.update();
 
@@ -281,7 +268,7 @@ public class JarSigningTest {
       ApkZFileTestUtils.addAndroidManifest(zf2);
       ManifestGenerationExtension me = new ManifestGenerationExtension(builtBy, createdBy);
       me.register(zf2);
-      new SigningExtension(21, p.v2, p.v1, true, false).register(zf2);
+      new SigningExtension(21, signingData.v2, signingData.v1, true, false).register(zf2);
 
       zf2.add(file1Name, new ByteArrayInputStream(file1Contents));
 
@@ -302,11 +289,11 @@ public class JarSigningTest {
     }
   }
 
-  @Test
-  public void openSignedJarDoesNotForcesWriteIfSignatureIsNotCorrect() throws Exception {
+  @Theory
+  public void openSignedJarDoesNotForcesWriteIfSignatureIsNotCorrect(
+      @FromDataPoints("signing_data") ApkZLibPair<PrivateKey, X509Certificate> signingData)
+      throws Exception {
     File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
-
-    ApkZLibPair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePos18();
 
     String fileName = "file";
     byte[] fileContents = "Very interesting contents".getBytes(Charsets.US_ASCII);
@@ -315,7 +302,7 @@ public class JarSigningTest {
       ApkZFileTestUtils.addAndroidManifest(zf);
       ManifestGenerationExtension me = new ManifestGenerationExtension("I", "Android");
       me.register(zf);
-      new SigningExtension(21, p.v2, p.v1, true, false).register(zf);
+      new SigningExtension(21, signingData.v2, signingData.v1, true, false).register(zf);
 
       zf.add(fileName, new ByteArrayInputStream(fileContents));
     }
@@ -330,7 +317,7 @@ public class JarSigningTest {
     try (ZFile zf = new ZFile(zipFile)) {
       ManifestGenerationExtension me = new ManifestGenerationExtension("I", "Android");
       me.register(zf);
-      new SigningExtension(21, p.v2, p.v1, true, false).register(zf);
+      new SigningExtension(21, signingData.v2, signingData.v1, true, false).register(zf);
     }
 
     /*
@@ -367,7 +354,7 @@ public class JarSigningTest {
     try (ZFile zf = new ZFile(zipFile)) {
       ManifestGenerationExtension me = new ManifestGenerationExtension("I", "Android");
       me.register(zf);
-      new SigningExtension(21, p.v2, p.v1, true, false).register(zf);
+      new SigningExtension(21, signingData.v2, signingData.v1, true, false).register(zf);
     }
 
     /*

@@ -1,8 +1,6 @@
 package com.android.tools.build.apkzlib.bytestorage;
 
 import com.google.common.base.Preconditions;
-import com.google.common.io.MoreFiles;
-import com.google.common.io.RecursiveDeleteOption;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -50,11 +48,17 @@ public class TemporaryFile implements Closeable {
 
   /** Deletes a file or directory if it exists. */
   private void deleteFile(File file) throws IOException {
-    if (file.exists()) {
-      // Technically there may be a race condition because deleteRecursively doesn't allow
-      // deleting non-existent paths and we could delete file between the exists() call and
-      // this one.
-      MoreFiles.deleteRecursively(file.toPath(), RecursiveDeleteOption.ALLOW_INSECURE);
+    if (file.isDirectory()) {
+      File[] contents = file.listFiles();
+      if (contents != null) {
+        for (File subFile : contents) {
+          deleteFile(subFile);
+        }
+      }
+    }
+
+    if (file.exists() && !file.delete()) {
+      throw new IOException("Failed to delete '" + file.getAbsolutePath() + "'");
     }
   }
 }

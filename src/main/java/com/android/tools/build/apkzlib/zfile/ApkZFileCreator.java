@@ -21,14 +21,14 @@ import com.android.tools.build.apkzlib.zip.AlignmentRules;
 import com.android.tools.build.apkzlib.zip.StoredEntry;
 import com.android.tools.build.apkzlib.zip.ZFile;
 import com.android.tools.build.apkzlib.zip.ZFileOptions;
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
 import com.google.common.io.Closer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import javax.annotation.Nullable;
 
 /** {@link ApkCreator} that uses {@link ZFileOptions} to generate the APK. */
@@ -65,10 +65,9 @@ class ApkZFileCreator implements ApkCreator {
         noCompressPredicate = creationData.getNoCompressPredicate();
         break;
       case UNCOMPRESSED_AND_ALIGNED:
+        Predicate<String> baseNoCompressPredicate = creationData.getNoCompressPredicate();
         noCompressPredicate =
-            creationData
-                .getNoCompressPredicate()
-                .or(name -> name.endsWith(NATIVE_LIBRARIES_SUFFIX));
+            name -> baseNoCompressPredicate.apply(name) || name.endsWith(NATIVE_LIBRARIES_SUFFIX);
         options.setAlignmentRule(AlignmentRules.compose(SO_RULE, options.getAlignmentRule()));
         break;
       default:
@@ -110,13 +109,14 @@ class ApkZFileCreator implements ApkCreator {
       // Files that *must* be uncompressed in the result should not be merged and should be
       // added after. This is just very slightly less efficient than ignoring just the ones
       // that were compressed and must be uncompressed, but it is a lot simpler :)
-      Predicate<String> noMergePredicate = ignorePredicate.or(noCompressPredicate);
+      Predicate<String> noMergePredicate =
+          v -> ignorePredicate.apply(v) || noCompressPredicate.apply(v);
 
       this.zip.mergeFrom(toMerge, noMergePredicate);
 
       for (StoredEntry toMergeEntry : toMerge.entries()) {
         String path = toMergeEntry.getCentralDirectoryHeader().getName();
-        if (noCompressPredicate.test(path) && !ignorePredicate.test(path)) {
+        if (noCompressPredicate.apply(path) && !ignorePredicate.apply(path)) {
           // This entry *must* be uncompressed so it was ignored in the merge and should
           // now be added to the apk.
           try (InputStream ignoredData = toMergeEntry.open()) {
@@ -135,7 +135,7 @@ class ApkZFileCreator implements ApkCreator {
   public void writeFile(File inputFile, String apkPath) throws IOException {
     Preconditions.checkState(!closed, "closed == true");
 
-    boolean mayCompress = !noCompressPredicate.test(apkPath);
+    boolean mayCompress = !noCompressPredicate.apply(apkPath);
 
     Closer closer = Closer.create();
     try {

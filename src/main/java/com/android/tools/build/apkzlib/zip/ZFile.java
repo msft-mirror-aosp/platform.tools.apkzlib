@@ -24,7 +24,10 @@ import com.android.tools.build.apkzlib.zip.compress.Zip64NotSupportedException;
 import com.android.tools.build.apkzlib.zip.utils.ByteTracker;
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
 import com.android.tools.build.apkzlib.zip.utils.LittleEndianUtils;
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+import com.google.common.base.Supplier;
 import com.google.common.base.Verify;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableList;
@@ -34,7 +37,6 @@ import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Closer;
-import com.google.common.io.Files;
 import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -52,6 +54,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -61,8 +64,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
 /**
@@ -919,7 +920,6 @@ public class ZFile implements Closeable {
      * Process all background stuff before calling in the extensions.
      */
     processAllReadyEntriesWithWait();
-
     notify(ZFileExtension::beforeUpdate);
 
     /*
@@ -927,10 +927,41 @@ public class ZFile implements Closeable {
      */
     processAllReadyEntriesWithWait();
 
-    if (!dirty) {
-      return;
+    if (dirty) {
+      writeAllFilesToZip();
     }
 
+    // Even if no files were modified, we still need to recompute the central directory and EOCD
+    // in case they have been modified by any extension.
+    recomputeAndWriteCentralDirectoryAndEocd();
+
+    // If there are no changes to the file, we may get here without even opening the zip as a
+    // RandomAccessFile. In that case, don't try to change the size since we're sure there are no
+    // changes.
+    if (raf != null) {
+      // Ensure we make the zip have the right size (only useful if shrinking), mark the zip as
+      // no longer dirty and notify all extensions.
+      if (raf.length() != map.size()) {
+        raf.setLength(map.size());
+      }
+    }
+
+    // Regardless of whether the zip was dirty or not, we're sure it isn't now.
+    dirty = false;
+
+    notify(
+        ext -> {
+          ext.updated();
+          return null;
+        });
+  }
+
+  /**
+   * Writes all files to the zip, sorting/packing if necessary. The central directory and EOCD are
+   * deleted. When this method finishes, all entries have been written to the file and are properly
+   * aligned.
+   */
+  private void writeAllFilesToZip() throws IOException {
     reopenRw();
 
     /*
@@ -1010,13 +1041,13 @@ public class ZFile implements Closeable {
         }
 
         List<ExtraField.Segment> extraFieldSegments = new ArrayList<>();
-        int newExtraFieldSize =
-            currentSegments
-                .stream()
-                .filter(s -> s.getHeaderId() != ExtraField.ALIGNMENT_ZIP_EXTRA_DATA_FIELD_HEADER_ID)
-                .peek(extraFieldSegments::add)
-                .map(ExtraField.Segment::size)
-                .reduce(0, Integer::sum);
+        int newExtraFieldSize = 0;
+        for (ExtraField.Segment segment : currentSegments) {
+          if (segment.getHeaderId() != ExtraField.ALIGNMENT_ZIP_EXTRA_DATA_FIELD_HEADER_ID) {
+            extraFieldSegments.add(segment);
+            newExtraFieldSize += segment.size();
+          }
+        }
 
         int spaceToFill =
             Ints.checkedCast(
@@ -1075,12 +1106,37 @@ public class ZFile implements Closeable {
         writeEntry(entry, fileUseMapEntry.getStart());
       }
     }
+  }
 
+  /**
+   * Recomputes the central directory and EOCD and notifies extensions that all entries have been
+   * written. Extensions may further modify the archive and this may require the directory and EOCD
+   * to be recomputed several times.
+   *
+   * <p>This method finishes when the central directory and EOCD have both been computed and written
+   * to the zip file and all extensions have been notified using {@link
+   * ZFileExtension#entriesWritten()}.
+   */
+  private void recomputeAndWriteCentralDirectoryAndEocd() throws IOException {
+    boolean changedAnything = false;
     boolean hasCentralDirectory;
     int extensionBugDetector = MAXIMUM_EXTENSION_CYCLE_COUNT;
     do {
-      computeCentralDirectory();
-      computeEocd();
+      // Try to compute the central directory and EOCD. Computing the central directory may end
+      // with directoryEntry == null if there are no entries in the zip.
+      if (directoryEntry == null) {
+        reopenRw();
+        changedAnything = true;
+        computeCentralDirectory();
+      }
+
+      if (eocdEntry == null) {
+        // It is fine to call computeEocd even if directoryEntry == null as long as the zip has
+        // no files.
+        reopenRw();
+        changedAnything = true;
+        computeEocd();
+      }
 
       hasCentralDirectory = (directoryEntry != null);
 
@@ -1096,19 +1152,11 @@ public class ZFile implements Closeable {
       }
     } while (hasCentralDirectory && directoryEntry == null);
 
-    appendCentralDirectory();
-    appendEocd();
-
-    Verify.verifyNotNull(raf);
-    raf.setLength(map.size());
-
-    dirty = false;
-
-    notify(
-        ext -> {
-          ext.updated();
-          return null;
-        });
+    if (changedAnything) {
+      reopenRw();
+      appendCentralDirectory();
+      appendEocd();
+    }
   }
 
   /**
@@ -1877,7 +1925,7 @@ public class ZFile implements Closeable {
     checkNotInReadOnlyMode();
 
     for (StoredEntry fromEntry : src.entries()) {
-      if (ignoreFilter.test(fromEntry.getCentralDirectoryHeader().getName())) {
+      if (ignoreFilter.apply(fromEntry.getCentralDirectoryHeader().getName())) {
         continue;
       }
 
@@ -2354,38 +2402,58 @@ public class ZFile implements Closeable {
   public void addAllRecursively(File file, Predicate<? super File> mayCompress) throws IOException {
     checkNotInReadOnlyMode();
 
+    addAllRecursively(file, file, mayCompress);
+  }
+
+  /**
+   * Adds all files and directories recursively.
+   *
+   * @param file a file or directory; if it is a directory, all files and directories will be added
+   *     recursively
+   * @param base the file/directory to compute the relative path from
+   * @param mayCompress a function that decides whether files may be compressed
+   * @throws IOException failed to some (or all ) of the files
+   * @throws IllegalStateException if the file is in read-only mode
+   */
+  private void addAllRecursively(File file, File base, Predicate<? super File> mayCompress)
+      throws IOException {
+    // If we're just adding a file, do not compute a relative path, but rather use the file name
+    // as path.
+    String path =
+        Objects.equal(file, base)
+            ? file.getName()
+            : base.toURI().relativize(file.toURI()).getPath();
+
     /*
      * The case of file.isFile() is different because if file.isFile() we will add it to the
      * zip in the root. However, if file.isDirectory() we won't add it and add its children.
      */
     if (file.isFile()) {
       boolean mayCompressFile =
-          Verify.verifyNotNull(mayCompress.test(file), "mayCompress.apply() returned null");
+          Verify.verifyNotNull(mayCompress.apply(file), "mayCompress.apply() returned null");
 
       try (Closer closer = Closer.create()) {
         FileInputStream fileInput = closer.register(new FileInputStream(file));
-        add(file.getName(), fileInput, mayCompressFile);
+        add(path, fileInput, mayCompressFile);
       }
 
       return;
-    }
-
-    for (File f : Files.fileTreeTraverser().preOrderTraversal(file).skip(1)) {
-      String path = file.toURI().relativize(f.toURI()).getPath();
-
-      InputStream stream;
-      try (Closer closer = Closer.create()) {
-        boolean mayCompressFile;
-        if (f.isDirectory()) {
-          stream = closer.register(new ByteArrayInputStream(new byte[0]));
-          mayCompressFile = false;
-        } else {
-          stream = closer.register(new FileInputStream(f));
-          mayCompressFile =
-              Verify.verifyNotNull(mayCompress.test(f), "mayCompress.apply() returned null");
+    } else if (file.isDirectory()) {
+      // Add an entry for the directory, unless it is the base.
+      if (!file.equals(base)) {
+        try (Closer closer = Closer.create()) {
+          InputStream stream = closer.register(new ByteArrayInputStream(new byte[0]));
+          add(path, stream, false);
         }
+      }
 
-        add(path, stream, mayCompressFile);
+      // Add recursively.
+      File[] directoryContents = file.listFiles();
+      if (directoryContents != null) {
+        Arrays.sort(directoryContents, (f0, f1) -> f0.getName().compareTo(f1.getName()));
+        for (File subFile : directoryContents) {
+          addAllRecursively(subFile, base, mayCompress);
+        }
       }
     }
   }

@@ -18,6 +18,7 @@ package com.android.tools.build.apkzlib.zip;
 
 import com.android.tools.build.apkzlib.bytestorage.ByteStorage;
 import com.android.tools.build.apkzlib.utils.CachedSupplier;
+import com.android.tools.build.apkzlib.utils.IOExceptionWrapper;
 import com.android.tools.build.apkzlib.zip.utils.MsDosDateTimeUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -30,6 +31,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -388,7 +390,7 @@ class CentralDirectory {
   private byte[] computeByteRepresentation() {
 
     List<StoredEntry> sorted = Lists.newArrayList(entries.values());
-    sorted.sort(StoredEntry.COMPARE_BY_NAME);
+    Collections.sort(sorted, StoredEntry.COMPARE_BY_NAME);
 
     CentralDirectoryHeader[] cdhs = new CentralDirectoryHeader[entries.size()];
     CentralDirectoryHeaderCompressInfo[] compressInfos =
@@ -455,7 +457,7 @@ class CentralDirectory {
 
       return out.array();
     } catch (IOException e) {
-      throw new UncheckedIOException(e);
+      throw new IOExceptionWrapper(e);
     }
   }
 }
