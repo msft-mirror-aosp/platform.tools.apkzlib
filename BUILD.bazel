@@ -26,12 +26,10 @@ maven_pom(
     source = "//tools/buildSrc/base:build_version",
 )
 
-java_test(
-    name = "apkzlib_tests",
+java_library(
+    name = "apkzlib_tests_lib",
     srcs = glob(["src/test/java/**/*.java"]),
-    jvm_flags = ["-Dtest.suite.jar=tests.jar"],
     resources = glob(["src/test/resources/**"]),
-    test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":apkzlib",
         "//tools/base/testutils:tools.testutils",
@@ -41,5 +39,16 @@ java_test(
         "//tools/base/third_party:org.bouncycastle_bcpkix-jdk15on",
         "//tools/base/third_party:org.bouncycastle_bcprov-jdk15on",
         "//tools/base/third_party:org.mockito_mockito-core",
+    ],
+)
+
+java_test(
+    name = "apkzlib_tests",
+    jvm_flags = ["-Dtest.suite.jar=apkzlib_tests_lib.jar"],
+    test_class = "com.android.testutils.JarTestSuite",
+    runtime_deps = [
+        ":apkzlib_tests_lib",
+        "//tools/base/testutils:tools.testutils",
+        "//tools/base/third_party:junit_junit",
     ],
 )
