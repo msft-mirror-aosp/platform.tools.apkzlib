@@ -58,7 +58,7 @@ class SwitchableDelegateCloseableByteSource extends CloseableByteSource {
           @Override
           public void close() throws IOException {
             // Remove the stream on close.
-            synchronized (this) {
+            synchronized (SwitchableDelegateCloseableByteSource.this) {
               nonClosedStreams.remove(this);
             }
 
