@@ -13,7 +13,7 @@ import java.io.InputStream;
  * Byte storage that keeps all byte sources as files in a temporary directory. Each data stored is
  * stored as a new file. The file is deleted as soon as the byte source is closed.
  */
-class TemporaryDirectoryStorage implements ByteStorage {
+public class TemporaryDirectoryStorage implements ByteStorage {
 
   /** Temporary directory to use. */
   @VisibleForTesting // private otherwise.
@@ -32,7 +32,7 @@ class TemporaryDirectoryStorage implements ByteStorage {
    *     files; this directory will be closed when the {@link TemporaryDirectoryStorage} is closed.
    * @throws IOException failed to create the temporary directory
    */
-  TemporaryDirectoryStorage(TemporaryDirectoryFactory temporaryDirectoryFactory)
+  public TemporaryDirectoryStorage(TemporaryDirectoryFactory temporaryDirectoryFactory)
       throws IOException {
     this.temporaryDirectory = temporaryDirectoryFactory.make();
   }
