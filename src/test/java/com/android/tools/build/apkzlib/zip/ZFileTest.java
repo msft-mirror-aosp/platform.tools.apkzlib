@@ -1043,7 +1043,8 @@ public class ZFileTest {
   @Test
   public void unusedZipAreasAreClearedOnWrite() throws Exception {
     File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
-    ZFileOptions options = new ZFileOptions();
+    // coverEmptySpaceUsingExtraField needs to be false to create an unused area.
+    ZFileOptions options = new ZFileOptions().setCoverEmptySpaceUsingExtraField(false);
     options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1000));
     try (ZFile zf = new ZFile(zipFile, options)) {
       zf.add("test1.txt", new ByteArrayInputStream(new byte[] {1}), false);
@@ -1059,7 +1060,8 @@ public class ZFileTest {
       raf.write(dummyData);
     }
 
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf =
+        new ZFile(zipFile, new ZFileOptions().setCoverEmptySpaceUsingExtraField(false))) {
       zf.touch();
     }
 

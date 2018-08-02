@@ -87,7 +87,8 @@ public class AlignmentTest {
     byte[] testBytes1 = "Text number 2, which is actually 1".getBytes(Charsets.US_ASCII);
 
     long offset0;
-    try (ZFile zf = new ZFile(newZFile)) {
+    try (ZFile zf =
+        new ZFile(newZFile, new ZFileOptions().setCoverEmptySpaceUsingExtraField(false))) {
       zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
       zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
       zf.close();
@@ -104,6 +105,7 @@ public class AlignmentTest {
 
     ZFileOptions options = new ZFileOptions();
     options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
+    options.setCoverEmptySpaceUsingExtraField(false);
     try (ZFile zf = new ZFile(newZFile, options)) {
       StoredEntry se1 = zf.get("file1.txt");
       assertNotNull(se1);
@@ -539,7 +541,8 @@ public class AlignmentTest {
      * 103   | 133        | 136      | 144          | "foo"
      * 144   | 174        | 196      | 396          | "File taking more space"
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf =
+        new ZFile(zipFile, new ZFileOptions().setCoverEmptySpaceUsingExtraField(false))) {
       zf.add("File taking exactly 103 bytes", new ByteArrayInputStream(fourtyFour), false);
       zf.add("foo", new ByteArrayInputStream(recognizable), false);
       zf.add("File taking more space", new ByteArrayInputStream(twoHundred), false);
@@ -552,7 +555,8 @@ public class AlignmentTest {
     /*
      * Remove the middle file.
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf =
+        new ZFile(zipFile, new ZFileOptions().setCoverEmptySpaceUsingExtraField(false))) {
       StoredEntry fooEntry = zf.get("foo");
       assertNotNull(fooEntry);
       fooEntry.delete();
@@ -594,7 +598,8 @@ public class AlignmentTest {
      * 103   | 133        | 136      | 152          | "foo"
      * 152   | 182        | 204      | 404          | "File taking more space"
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf =
+        new ZFile(zipFile, new ZFileOptions().setCoverEmptySpaceUsingExtraField(false))) {
       zf.add("File taking exactly 103 bytes", new ByteArrayInputStream(fourtyFour), false);
       zf.add("foo", new ByteArrayInputStream(recognizable), false);
       zf.add("File taking more space", new ByteArrayInputStream(twoHundred), false);
@@ -607,7 +612,8 @@ public class AlignmentTest {
     /*
      * Remove the middle file.
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf =
+        new ZFile(zipFile, new ZFileOptions().setCoverEmptySpaceUsingExtraField(false))) {
       StoredEntry fooEntry = zf.get("foo");
       assertNotNull(fooEntry);
       fooEntry.delete();
@@ -722,7 +728,8 @@ public class AlignmentTest {
      * 103   | 133        | 136      | 152          | "foo"
      * 152   | 182        | 204      | 404          | "File taking more space"
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf =
+        new ZFile(zipFile, new ZFileOptions().setCoverEmptySpaceUsingExtraField(false))) {
       zf.add("File taking exactly 103 bytes", new ByteArrayInputStream(fourtyFour), false);
       zf.add("foo", new ByteArrayInputStream(recognizable), false);
       zf.add("File taking more space", new ByteArrayInputStream(twoHundred), false);
@@ -735,7 +742,8 @@ public class AlignmentTest {
     /*
      * Remove the middle file.
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf =
+        new ZFile(zipFile, new ZFileOptions().setCoverEmptySpaceUsingExtraField(false))) {
       StoredEntry fooEntry = zf.get("foo");
       assertNotNull(fooEntry);
       fooEntry.delete();
