@@ -16,6 +16,7 @@
 
 java_library_static {
     name: "apkzlib_zip",
+    sdk_version: "24",
     srcs: [
         "src/main/java/com/android/tools/build/apkzlib/utils/**/*.java",
         "src/main/java/com/android/tools/build/apkzlib/zip/**/*.java",
