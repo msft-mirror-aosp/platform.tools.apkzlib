@@ -45,7 +45,7 @@ public class PerformanceTest {
     random.nextBytes(mediumNonCompressible);
     random.nextBytes(largeNonCompressible);
 
-    try (ZFile zf = new ZFile(zip, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zip, options)) {
       for (int i = 0; i < compressibleFiles.smallCount; i++) {
         zf.add("scf-" + i, new ByteArrayInputStream(new byte[100]));
       }

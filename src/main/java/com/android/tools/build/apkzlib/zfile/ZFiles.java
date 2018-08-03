@@ -56,7 +56,7 @@ public class ZFiles {
    */
   public static ZFile apk(File f, ZFileOptions options) throws IOException {
     options.setAlignmentRule(AlignmentRules.compose(options.getAlignmentRule(), APK_DEFAULT_RULE));
-    return new ZFile(f, options);
+    return ZFile.openReadWrite(f, options);
   }
   /**
    * Creates a new zip file configured as an apk, based on a given file.

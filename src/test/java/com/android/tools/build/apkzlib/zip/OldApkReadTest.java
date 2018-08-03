@@ -33,7 +33,7 @@ public class OldApkReadTest {
     File apkFile = ApkZFileTestUtils.getResource("packaging/test.apk");
     assertTrue(apkFile.exists());
 
-    try (ZFile zf = new ZFile(apkFile, new ZFileOptions())) {
+    try (ZFile zf = ZFile.openReadWrite(apkFile, new ZFileOptions())) {
       StoredEntry classesDex = zf.get("classes.dex");
       assertNotNull(classesDex);
     }

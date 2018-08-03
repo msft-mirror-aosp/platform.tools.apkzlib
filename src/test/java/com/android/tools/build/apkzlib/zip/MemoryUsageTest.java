@@ -58,7 +58,7 @@ public class MemoryUsageTest {
     ZFileOptions options = new ZFileOptions();
     options.setStorageFactory(storageFactory);
     ByteStorage storage;
-    try (ZFile zf = new ZFile(zip, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zip, options)) {
       zf.add("very-compressible", new ByteArrayInputStream(VERY_COMPRESSIBLE_DATA));
       zf.add("very-compressible-stored", new ByteArrayInputStream(VERY_COMPRESSIBLE_DATA), false);
       zf.add("not-compressible", new ByteArrayInputStream(NOT_COMPRESSIBLE_DATA));
@@ -66,7 +66,7 @@ public class MemoryUsageTest {
       storage = zf.getStorage();
     }
 
-    try (ZFile zf = new ZFile(zip)) {
+    try (ZFile zf = ZFile.openReadWrite(zip)) {
       assertThat(
               zf.get("very-compressible")
                   .getCentralDirectoryHeader()

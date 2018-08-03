@@ -507,7 +507,7 @@ public class StoredEntry {
             long dataStart = zipOffset + getLocalHeaderSize();
             long dataEnd = dataStart + compressInfo.getCompressedSize();
 
-            file.openReadOnly();
+            file.openReadOnlyIfClosed();
             return file.directOpen(dataStart, dataEnd);
           }
 

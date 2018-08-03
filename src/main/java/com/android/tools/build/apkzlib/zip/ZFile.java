@@ -366,7 +366,9 @@ public class ZFile implements Closeable {
    *
    * @param file the zip file
    * @throws IOException some file exists but could not be read
+   * @deprecated use {@link ZFile#openReadOnly(File)} or {@link ZFile#openReadWrite(File)}
    */
+  @Deprecated
   public ZFile(File file) throws IOException {
     this(file, new ZFileOptions());
   }
@@ -380,7 +382,10 @@ public class ZFile implements Closeable {
    * @param file the zip file
    * @param options configuration options
    * @throws IOException some file exists but could not be read
+   * @deprecated use {@link ZFile#openReadOnly(File, ZFileOptions)} or {@link
+   *     ZFile#openReadWrite(File, ZFileOptions)}
    */
+  @Deprecated
   public ZFile(File file, ZFileOptions options) throws IOException {
     this(file, options, false);
   }
@@ -396,7 +401,10 @@ public class ZFile implements Closeable {
    * @param readOnly should the file be open in read-only mode? If {@code true} then the file must
    *     exist and no methods can be invoked that could potentially change the file
    * @throws IOException some file exists but could not be read
+   * @deprecated use {@link ZFile#openReadOnly(File, ZFileOptions)} or {@link
+   *     ZFile#openReadWrite(File, ZFileOptions)}
    */
+  @Deprecated
   public ZFile(File file, ZFileOptions options, boolean readOnly) throws IOException {
     this.file = file;
     map =
@@ -417,13 +425,13 @@ public class ZFile implements Closeable {
     verifyLog = verifyLogFactory.get();
 
     /*
-     * These two values will be overwritten by openReadOnly() below if the file exists.
+     * These two values will be overwritten by openReadOnlyIfClosed() below if the file exists.
      */
     state = ZipFileState.CLOSED;
     raf = null;
 
     if (file.exists()) {
-      openReadOnly();
+      openReadOnlyIfClosed();
     } else if (readOnly) {
       throw new IOException("File does not exist but read-only mode requested");
     } else {
@@ -462,6 +470,76 @@ public class ZFile implements Closeable {
       throw new RuntimeException(
           "Internal error when trying to read zip file '" + file.getAbsolutePath() + "'.", e);
     }
+  }
+
+  /**
+   * Old name of {@link #openReadOnlyIfClosed()}, method kept for backwards compatibility only.
+   *
+   * @deprecated use {@link #openReadOnlyIfClosed()} if necessary to ensure a {@link ZFile} is open
+   *     and readable
+   */
+  @Deprecated
+  public void openReadOnly() throws IOException {
+    openReadOnlyIfClosed();
+  }
+
+  /**
+   * Opens a new {@link ZFile} from the given file in read-only mode.
+   *
+   * @param file the file to open
+   * @return the created file
+   * @throws IOException failed to read the file
+   */
+  public static ZFile openReadOnly(File file) throws IOException {
+    return openReadOnly(file, new ZFileOptions());
+  }
+
+  /**
+   * Opens a new {@link ZFile} from the given file in read-only mode.
+   *
+   * @param file the file to open
+   * @param options the options to use to open the file; because the file is open read-only, many of
+   *     these options won't have any effect
+   * @return the created file
+   * @throws IOException failed to read the file
+   */
+  public static ZFile openReadOnly(File file, ZFileOptions options) throws IOException {
+    return new ZFile(file, options, true);
+  }
+
+  /**
+   * Opens a new {@link ZFile} from the given file in read-write mode. Opening a file in read-write
+   * mode may force the file to be written even if no changes are made. For example, differences in
+   * signature will force the file to be written. Use {@link #openReadOnly(File, ZFileOptions)} to
+   * open a file and ensure it won't be written.
+   *
+   * <p>The file will be created if it doesn't exist. If the file exists, it must be a valid zip
+   * archive.
+   *
+   * @param file the file to open
+   * @return the created file
+   * @throws IOException failed to read the file
+   */
+  public static ZFile openReadWrite(File file) throws IOException {
+    return openReadWrite(file, new ZFileOptions());
+  }
+
+  /**
+   * Opens a new {@link ZFile} from the given file in read-write mode. Opening a file in read-write
+   * mode may force the file to be written even if no changes are made. For example, differences in
+   * signature will force the file to be written. Use {@link #openReadOnly(File, ZFileOptions)} to
+   * open a file and ensure it won't be written.
+   *
+   * <p>The file will be created if it doesn't exist. If the file exists, it must be a valid zip
+   * archive.
+   *
+   * @param file the file to open
+   * @param options the options to use to open the file
+   * @return the created file
+   * @throws IOException failed to read the file
+   */
+  public static ZFile openReadWrite(File file, ZFileOptions options) throws IOException {
+    return new ZFile(file, options, false);
   }
 
   /**
@@ -1519,7 +1597,7 @@ public class ZFile implements Closeable {
    *
    * @throws IOException failed to open the file
    */
-  public void openReadOnly() throws IOException {
+  public void openReadOnlyIfClosed() throws IOException {
     if (state != ZipFileState.CLOSED) {
       return;
     }

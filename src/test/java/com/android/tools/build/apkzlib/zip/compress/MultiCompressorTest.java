@@ -61,7 +61,7 @@ public class MultiCompressorTest {
   public void storeIsBest() throws Exception {
     File zip = new File(temporaryFolder.getRoot(), "test.zip");
 
-    try (ZFile zf = new ZFile(zip)) {
+    try (ZFile zf = ZFile.openReadWrite(zip)) {
       zf.add("file", new ByteArrayInputStream(new byte[0]));
       StoredEntry entry = zf.get("file");
       assertNotNull(entry);
@@ -80,7 +80,7 @@ public class MultiCompressorTest {
 
     byte[] data = new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    try (ZFile zf = new ZFile(zip)) {
+    try (ZFile zf = ZFile.openReadWrite(zip)) {
       zf.add("file", new ByteArrayInputStream(data));
       StoredEntry entry = zf.get("file");
       assertNotNull(entry);
@@ -109,8 +109,8 @@ public class MultiCompressorTest {
     resultOptions.setCompressor(
         new BestAndDefaultDeflateExecutorCompressor(MoreExecutors.directExecutor(), ratio + 0.001));
 
-    try (ZFile defaultZFile = new ZFile(defaultFile);
-        ZFile resultZFile = new ZFile(resultFile, resultOptions)) {
+    try (ZFile defaultZFile = ZFile.openReadWrite(defaultFile);
+        ZFile resultZFile = ZFile.openReadWrite(resultFile, resultOptions)) {
       defaultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
       resultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
     }
@@ -137,8 +137,8 @@ public class MultiCompressorTest {
     resultOptions.setCompressor(
         new BestAndDefaultDeflateExecutorCompressor(MoreExecutors.directExecutor(), ratio - 0.001));
 
-    try (ZFile defaultZFile = new ZFile(defaultFile);
-        ZFile resultZFile = new ZFile(resultFile, resultOptions)) {
+    try (ZFile defaultZFile = ZFile.openReadWrite(defaultFile);
+        ZFile resultZFile = ZFile.openReadWrite(resultFile, resultOptions)) {
       defaultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
       resultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
     }

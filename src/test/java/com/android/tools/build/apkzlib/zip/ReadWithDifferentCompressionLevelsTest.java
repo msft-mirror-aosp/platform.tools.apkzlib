@@ -33,7 +33,7 @@ public class ReadWithDifferentCompressionLevelsTest {
     File l9File = ApkZFileTestUtils.getResource("packaging/l9.zip");
     assertTrue(l9File.isFile());
 
-    try (ZFile read = new ZFile(l9File, new ZFileOptions())) {
+    try (ZFile read = ZFile.openReadWrite(l9File, new ZFileOptions())) {
       assertNotNull(read.get("text-files/rfc2460.txt"));
     }
   }
@@ -43,7 +43,7 @@ public class ReadWithDifferentCompressionLevelsTest {
     File l1File = ApkZFileTestUtils.getResource("packaging/l1.zip");
     assertTrue(l1File.isFile());
 
-    try (ZFile read = new ZFile(l1File, new ZFileOptions())) {
+    try (ZFile read = ZFile.openReadWrite(l1File, new ZFileOptions())) {
       assertNotNull(read.get("text-files/rfc2460.txt"));
     }
   }
