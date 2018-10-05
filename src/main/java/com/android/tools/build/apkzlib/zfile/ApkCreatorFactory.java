@@ -18,11 +18,10 @@ package com.android.tools.build.apkzlib.zfile;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.Preconditions;
+import com.android.tools.build.apkzlib.sign.SigningOptions;
 import com.google.common.base.Predicate;
 import java.io.File;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /** Factory that creates instances of {@link ApkCreator}. */
@@ -47,29 +46,14 @@ public interface ApkCreatorFactory {
      */
     private final File apkPath;
 
-    /** Key used to sign the APK. May be {@code null}. */
-    @Nullable private final PrivateKey key;
-
-    /**
-     * Certificate used to sign the APK. Is {@code null} if and only if {@link #key} is {@code
-     * null}.
-     */
-    @Nullable private final X509Certificate certificate;
-
-    /** Whether signing the APK with JAR Signing Scheme (aka v1 signing) is enabled. */
-    private final boolean v1SigningEnabled;
-
-    /** Whether signing the APK with APK Signature Scheme v2 (aka v2 signing) is enabled. */
-    private final boolean v2SigningEnabled;
+    /** Data used to sign the APK */
+    private final SigningOptions signingOptions;
 
     /** Built-by information for the APK, if any. */
     @Nullable private final String builtBy;
 
     /** Created-by information for the APK, if any. */
     @Nullable private final String createdBy;
-
-    /** Minimum SDk version that will run the APK. */
-    private final int minSdkVersion;
 
     /** How should native libraries be packaged? */
     private final NativeLibrariesPackagingMode nativeLibrariesPackagingMode;
@@ -80,45 +64,25 @@ public interface ApkCreatorFactory {
     /**
      * @param apkPath the path where the APK should be located. May already exist or not (if it
      *     does, then the APK may be updated instead of created)
-     * @param key key used to sign the APK. May be {@code null}
-     * @param certificate certificate used to sign the APK. Is {@code null} if and only if {@code
-     *     key} is {@code null}
-     * @param v1SigningEnabled {@code true} if this APK should be signed with JAR Signature Scheme
-     *     (aka v1 scheme).
-     * @param v2SigningEnabled {@code true} if this APK should be signed with APK Signature Scheme
-     *     v2 (aka v2 scheme).
      * @param builtBy built-by information for the APK, if any; if {@code null} then the default
      *     should be used
      * @param createdBy created-by information for the APK, if any; if {@code null} then the default
      *     should be used
-     * @param minSdkVersion minimum SDK version that will run the APK
      * @param nativeLibrariesPackagingMode packaging mode for native libraries
      * @param noCompressPredicate predicate to decide which file paths should be uncompressed;
      *     returns {@code true} for files that should not be compressed
      */
     public CreationData(
         File apkPath,
-        @Nullable PrivateKey key,
-        @Nullable X509Certificate certificate,
-        boolean v1SigningEnabled,
-        boolean v2SigningEnabled,
+        @Nonnull SigningOptions signingOptions,
         @Nullable String builtBy,
         @Nullable String createdBy,
-        int minSdkVersion,
         NativeLibrariesPackagingMode nativeLibrariesPackagingMode,
         Predicate<String> noCompressPredicate) {
-      Preconditions.checkArgument(
-          (key == null) == (certificate == null), "(key == null) != (certificate == null)");
-      Preconditions.checkArgument(minSdkVersion >= 0, "minSdkVersion < 0");
-
       this.apkPath = apkPath;
-      this.key = key;
-      this.certificate = certificate;
-      this.v1SigningEnabled = v1SigningEnabled;
-      this.v2SigningEnabled = v2SigningEnabled;
+      this.signingOptions = signingOptions;
       this.builtBy = builtBy;
       this.createdBy = createdBy;
-      this.minSdkVersion = minSdkVersion;
       this.nativeLibrariesPackagingMode = checkNotNull(nativeLibrariesPackagingMode);
       this.noCompressPredicate = checkNotNull(noCompressPredicate);
     }
@@ -134,39 +98,13 @@ public interface ApkCreatorFactory {
     }
 
     /**
-     * Obtains the private key used to sign the APK.
+     * Obtains the data used to sign the APK.
      *
-     * @return the private key or {@code null} if the APK should not be signed
+     * @return the SigningOptions
      */
-    @Nullable
-    public PrivateKey getPrivateKey() {
-      return key;
-    }
-
-    /**
-     * Obtains the certificate used to sign the APK.
-     *
-     * @return the certificate or {@code null} if the APK should not be signed; this will return
-     *     {@code null} if and only if {@link #getPrivateKey()} returns {@code null}
-     */
-    @Nullable
-    public X509Certificate getCertificate() {
-      return certificate;
-    }
-
-    /**
-     * Returns {@code true} if this APK should be signed with JAR Signature Scheme (aka v1 scheme).
-     */
-    public boolean isV1SigningEnabled() {
-      return v1SigningEnabled;
-    }
-
-    /**
-     * Returns {@code true} if this APK should be signed with APK Signature Scheme v2 (aka v2
-     * scheme).
-     */
-    public boolean isV2SigningEnabled() {
-      return v2SigningEnabled;
+    @Nonnull
+    public SigningOptions getSigningOptions() {
+      return signingOptions;
     }
 
     /**
@@ -187,15 +125,6 @@ public interface ApkCreatorFactory {
     @Nullable
     public String getCreatedBy() {
       return createdBy;
-    }
-
-    /**
-     * Obtains the minimum SDK version to run the APK.
-     *
-     * @return the minimum SDK version
-     */
-    public int getMinSdkVersion() {
-      return minSdkVersion;
     }
 
     /** Returns the packaging policy that the {@link ApkCreator} should use for native libraries. */

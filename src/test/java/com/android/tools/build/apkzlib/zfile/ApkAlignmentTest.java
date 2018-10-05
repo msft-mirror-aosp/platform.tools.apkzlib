@@ -21,6 +21,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.android.tools.build.apkzlib.sign.SigningOptions;
 import com.android.tools.build.apkzlib.zip.CompressionMethod;
 import com.android.tools.build.apkzlib.zip.StoredEntry;
 import com.android.tools.build.apkzlib.zip.ZFile;
@@ -28,6 +29,7 @@ import com.android.tools.build.apkzlib.zip.ZFileOptions;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.file.Files;
+import java.security.cert.X509Certificate;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -37,6 +39,8 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class ApkAlignmentTest {
   @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+  private final SigningOptions signingOptions = new SigningOptions(null, (X509Certificate)null, false, false, 20);
 
   @Test
   public void soFilesUncompressedAndAligned() throws Exception {
@@ -49,13 +53,9 @@ public class ApkAlignmentTest {
     ApkCreatorFactory.CreationData creationData =
         new ApkCreatorFactory.CreationData(
             apk,
+            signingOptions,
             null,
             null,
-            false,
-            false,
-            null,
-            null,
-            20,
             NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED,
             path -> false);
 
@@ -99,13 +99,9 @@ public class ApkAlignmentTest {
     ApkCreatorFactory.CreationData creationData =
         new ApkCreatorFactory.CreationData(
             apk,
+            signingOptions,
             null,
             null,
-            false,
-            false,
-            null,
-            null,
-            20,
             NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED,
             path -> false);
 
@@ -142,13 +138,9 @@ public class ApkAlignmentTest {
     ApkCreatorFactory.CreationData creationData =
         new ApkCreatorFactory.CreationData(
             apk,
+            signingOptions,
             null,
             null,
-            false,
-            false,
-            null,
-            null,
-            20,
             NativeLibrariesPackagingMode.COMPRESSED,
             path -> false);
 
@@ -192,13 +184,9 @@ public class ApkAlignmentTest {
     ApkCreatorFactory.CreationData creationData =
         new ApkCreatorFactory.CreationData(
             apk,
+            signingOptions,
             null,
             null,
-            false,
-            false,
-            null,
-            null,
-            20,
             NativeLibrariesPackagingMode.COMPRESSED,
             path -> false);
 

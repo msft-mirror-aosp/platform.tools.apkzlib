@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -112,41 +111,20 @@ public class SigningExtension {
   /** The file this extension is attached to. {@code null} if not yet registered. */
   @Nullable private ZFile zFile;
 
-  public SigningExtension(
-      int minSdkVersion,
-      X509Certificate certificate,
-      PrivateKey privateKey,
-      boolean v1SigningEnabled,
-      boolean v2SigningEnabled)
-      throws InvalidKeyException {
-    this(
-        minSdkVersion,
-        ImmutableList.of(certificate),
-        privateKey,
-        v1SigningEnabled,
-        v2SigningEnabled);
-  }
-
-  public SigningExtension(
-      int minSdkVersion,
-      ImmutableList<X509Certificate> certificates,
-      PrivateKey privateKey,
-      boolean v1SigningEnabled,
-      boolean v2SigningEnabled)
-      throws InvalidKeyException {
+  public SigningExtension(SigningOptions opts) throws InvalidKeyException {
     DefaultApkSignerEngine.SignerConfig signerConfig =
-        new DefaultApkSignerEngine.SignerConfig.Builder("CERT", privateKey, certificates).build();
+        new DefaultApkSignerEngine.SignerConfig.Builder("CERT", opts.getKey(), opts.getCertificates()).build();
     signer =
-        new DefaultApkSignerEngine.Builder(ImmutableList.of(signerConfig), minSdkVersion)
+        new DefaultApkSignerEngine.Builder(ImmutableList.of(signerConfig), opts.getMinSdkVersion())
             .setOtherSignersSignaturesPreserved(false)
-            .setV1SigningEnabled(v1SigningEnabled)
-            .setV2SigningEnabled(v2SigningEnabled)
+            .setV1SigningEnabled(opts.isV1SigningEnabled())
+            .setV2SigningEnabled(opts.isV2SigningEnabled())
             .setCreatedBy("1.0 (Android)")
             .build();
-    this.minSdkVersion = minSdkVersion;
-    this.v1SigningEnabled = v1SigningEnabled;
-    this.v2SigningEnabled = v2SigningEnabled;
-    this.certificates = certificates;
+    this.minSdkVersion = opts.getMinSdkVersion();
+    this.v1SigningEnabled = opts.isV1SigningEnabled();
+    this.v2SigningEnabled = opts.isV2SigningEnabled();
+    this.certificates = opts.getCertificates();
   }
 
   public void register(ZFile zFile) throws NoSuchAlgorithmException, IOException {
