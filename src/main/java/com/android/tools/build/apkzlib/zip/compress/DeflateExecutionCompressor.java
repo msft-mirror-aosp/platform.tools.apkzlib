@@ -22,6 +22,8 @@ import com.android.tools.build.apkzlib.zip.CompressionMethod;
 import com.android.tools.build.apkzlib.zip.CompressionResult;
 import com.android.tools.build.apkzlib.zip.utils.ByteTracker;
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
+import com.google.common.io.ByteStreams;
+import java.io.InputStream;
 import java.util.concurrent.Executor;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
@@ -55,8 +57,9 @@ public class DeflateExecutionCompressor extends ExecutorCompressor {
     Deflater deflater = new Deflater(level, true);
     CloseableByteSourceFromOutputStreamBuilder resultBuilder = storage.makeBuilder();
 
-    try (DeflaterOutputStream dos = new DeflaterOutputStream(resultBuilder, deflater)) {
-      dos.write(source.read());
+    try (InputStream inputStream = source.openBufferedStream();
+            DeflaterOutputStream dos = new DeflaterOutputStream(resultBuilder, deflater)) {
+      ByteStreams.copy(inputStream, dos);
     }
 
     CloseableByteSource result = resultBuilder.build();
