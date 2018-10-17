@@ -78,13 +78,9 @@ class ApkZFileCreator implements ApkCreator {
         ZFiles.apk(
             creationData.getApkPath(),
             options,
-            creationData.getPrivateKey(),
-            creationData.getCertificate(),
-            creationData.isV1SigningEnabled(),
-            creationData.isV2SigningEnabled(),
+            creationData.getSigningOptions(),
             creationData.getBuiltBy(),
-            creationData.getCreatedBy(),
-            creationData.getMinSdkVersion());
+            creationData.getCreatedBy());
     closed = false;
   }
 
