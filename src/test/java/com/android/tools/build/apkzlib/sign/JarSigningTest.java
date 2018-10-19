@@ -52,6 +52,21 @@ public class JarSigningTest {
   public static final ApkZLibPair<PrivateKey, X509Certificate>[] SIGNING_DATA =
       SignatureTestUtils.getAllSigningData();
 
+  private static SigningOptions createSigningOptionsV1(
+          ApkZLibPair<PrivateKey, X509Certificate> signingData) {
+    return createSigningOptionsV1(signingData, SignatureTestUtils.getApiLevelForKey(signingData.v1));
+  }
+
+  private static SigningOptions createSigningOptionsV1(
+          ApkZLibPair<PrivateKey, X509Certificate> signingData, int minSdk) {
+    return new SigningOptions(signingData.v1, signingData.v2, true, false, minSdk);
+  }
+
+  private static SigningOptions createSigningOptionsV2(
+          ApkZLibPair<PrivateKey, X509Certificate> signingData) {
+    return new SigningOptions(signingData.v1, signingData.v2, false, true, 12);
+  }
+
   @Theory
   public void signEmptyJar(
       @FromDataPoints("signing_data") ApkZLibPair<PrivateKey, X509Certificate> signingData)
@@ -63,13 +78,7 @@ public class JarSigningTest {
       ManifestGenerationExtension manifestExtension = new ManifestGenerationExtension("Me", "Me");
       manifestExtension.register(zf);
 
-      new SigningExtension(
-              SignatureTestUtils.getApiLevelForKey(signingData.v1),
-              signingData.v2,
-              signingData.v1,
-              true,
-              false)
-          .register(zf);
+      new SigningExtension(createSigningOptionsV1(signingData)).register(zf);
     }
 
     try (ZFile verifyZFile = new ZFile(zipFile)) {
@@ -99,13 +108,7 @@ public class JarSigningTest {
     try (ZFile zf2 = new ZFile(zipFile)) {
       ManifestGenerationExtension me = new ManifestGenerationExtension("Merry", "Christmas");
       me.register(zf2);
-      new SigningExtension(
-              SignatureTestUtils.getApiLevelForKey(signingData.v1),
-              signingData.v2,
-              signingData.v1,
-              true,
-              false)
-          .register(zf2);
+      new SigningExtension(createSigningOptionsV1(signingData)).register(zf2);
     }
 
     try (ZFile zf3 = new ZFile(zipFile)) {
@@ -184,7 +187,7 @@ public class JarSigningTest {
       ManifestGenerationExtension manifestExtension = new ManifestGenerationExtension("Me", "Me");
       manifestExtension.register(zf);
 
-      new SigningExtension(12, signingData.v2, signingData.v1, false, true).register(zf);
+      new SigningExtension(createSigningOptionsV2(signingData)).register(zf);
     }
 
     try (ZFile verifyZFile = new ZFile(zipFile)) {
@@ -215,7 +218,7 @@ public class JarSigningTest {
       zf1.add(file1Name, new ByteArrayInputStream(file1Contents));
       ManifestGenerationExtension me = new ManifestGenerationExtension(builtBy, createdBy);
       me.register(zf1);
-      new SigningExtension(21, signingData.v2, signingData.v1, true, false).register(zf1);
+      new SigningExtension(createSigningOptionsV1(signingData, 21)).register(zf1);
 
       zf1.update();
 
@@ -268,7 +271,7 @@ public class JarSigningTest {
       ApkZFileTestUtils.addAndroidManifest(zf2);
       ManifestGenerationExtension me = new ManifestGenerationExtension(builtBy, createdBy);
       me.register(zf2);
-      new SigningExtension(21, signingData.v2, signingData.v1, true, false).register(zf2);
+      new SigningExtension(createSigningOptionsV1(signingData, 21)).register(zf2);
 
       zf2.add(file1Name, new ByteArrayInputStream(file1Contents));
 
@@ -302,7 +305,7 @@ public class JarSigningTest {
       ApkZFileTestUtils.addAndroidManifest(zf);
       ManifestGenerationExtension me = new ManifestGenerationExtension("I", "Android");
       me.register(zf);
-      new SigningExtension(21, signingData.v2, signingData.v1, true, false).register(zf);
+      new SigningExtension(createSigningOptionsV1(signingData, 21)).register(zf);
 
       zf.add(fileName, new ByteArrayInputStream(fileContents));
     }
@@ -317,7 +320,7 @@ public class JarSigningTest {
     try (ZFile zf = new ZFile(zipFile)) {
       ManifestGenerationExtension me = new ManifestGenerationExtension("I", "Android");
       me.register(zf);
-      new SigningExtension(21, signingData.v2, signingData.v1, true, false).register(zf);
+      new SigningExtension(createSigningOptionsV1(signingData, 21)).register(zf);
     }
 
     /*
@@ -354,7 +357,7 @@ public class JarSigningTest {
     try (ZFile zf = new ZFile(zipFile)) {
       ManifestGenerationExtension me = new ManifestGenerationExtension("I", "Android");
       me.register(zf);
-      new SigningExtension(21, signingData.v2, signingData.v1, true, false).register(zf);
+      new SigningExtension(createSigningOptionsV1(signingData, 21)).register(zf);
     }
 
     /*
