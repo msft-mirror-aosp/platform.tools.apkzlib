@@ -640,18 +640,22 @@ public class StoredEntry {
 
   /**
    * Obtains the local header data.
+   * @param buffer a buffer to write header data to
    *
-   * @return the header data
+   * @return the header data size
    * @throws IOException failed to get header byte data
    */
-  byte[] toHeaderData() throws IOException {
+  int toHeaderData(byte[] buffer) throws IOException {
+    Preconditions.checkArgument(
+            buffer.length >= F_EXTRA_LENGTH.endOffset() + cdh.getEncodedFileName().length + localExtra.size(),
+            "Buffer should be at least the header size");
 
-    byte[] encodedFileName = cdh.getEncodedFileName();
+    ByteBuffer out = ByteBuffer.wrap(buffer);
+    writeData(out);
+    return out.position();
+  }
 
-    ByteBuffer out =
-        ByteBuffer.allocate(
-            F_EXTRA_LENGTH.endOffset() + encodedFileName.length + localExtra.size());
-
+  private void writeData(ByteBuffer out) throws IOException {
     CentralDirectoryHeaderCompressInfo compressInfo = cdh.getCompressionInfoWithWait();
 
     F_LOCAL_SIGNATURE.write(out);
@@ -675,8 +679,6 @@ public class StoredEntry {
 
     out.put(cdh.getEncodedFileName());
     localExtra.write(out);
-
-    return out.array();
   }
 
   /**
