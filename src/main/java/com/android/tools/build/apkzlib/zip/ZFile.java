@@ -1097,13 +1097,14 @@ public class ZFile implements Closeable {
     /*
      * Write everything to file.
      */
+    byte[] chunk = new byte[IO_BUFFER_SIZE];
     for (FileUseMapEntry<?> fileUseMapEntry : toWriteToStore.keySet()) {
       StoredEntry entry = toWriteToStore.get(fileUseMapEntry);
       if (entry == null) {
         int size = Ints.checkedCast(fileUseMapEntry.getSize());
         directWrite(fileUseMapEntry.getStart(), new byte[size]);
       } else {
-        writeEntry(entry, fileUseMapEntry.getStart());
+        writeEntry(entry, fileUseMapEntry.getStart(), chunk);
       }
     }
   }
@@ -1296,35 +1297,23 @@ public class ZFile implements Closeable {
    * @param offset the offset at which the entry should be written
    * @throws IOException failed to write the entry
    */
-  private void writeEntry(StoredEntry entry, long offset) throws IOException {
+  private void writeEntry(StoredEntry entry, long offset, byte[] chunk) throws IOException {
     Preconditions.checkArgument(
         entry.getDataDescriptorType() == DataDescriptorType.NO_DATA_DESCRIPTOR,
         "Cannot write entries with a data " + "descriptor.");
     Preconditions.checkNotNull(raf, "raf == null");
     Preconditions.checkState(state == ZipFileState.OPEN_RW, "state != ZipFileState.OPEN_RW");
 
-    /*
-     * Place the cursor and write the local header.
-     */
-    byte[] headerData = entry.toHeaderData();
-    directWrite(offset, headerData);
-
-    /*
-     * Get the raw source data to write.
-     */
-    ProcessedAndRawByteSources source = entry.getSource();
-    ByteSource rawContents = source.getRawByteSource();
-
-    /*
-     * Write the source data.
-     */
-    byte[] chunk = new byte[IO_BUFFER_SIZE];
     int r;
-    long writeOffset = offset + headerData.length;
-    InputStream is = rawContents.openStream();
-    while ((r = is.read(chunk)) >= 0) {
-      directWrite(writeOffset, chunk, 0, r);
-      writeOffset += r;
+    // Put header data to the beginning of buffer
+    int readOffset = entry.toHeaderData(chunk);
+    long writeOffset = offset;
+    InputStream is = entry.getSource().getRawByteSource().openStream();
+    while ((r = is.read(chunk, readOffset, chunk.length - readOffset)) >= 0 || readOffset > 0) {
+      int toWrite = (r == -1 ? 0 : r) + readOffset;
+      directWrite(writeOffset, chunk, 0, toWrite);
+      writeOffset += toWrite;
+      readOffset = 0;
     }
 
     is.close();
@@ -2248,7 +2237,6 @@ public class ZFile implements Closeable {
    * @throws IllegalStateException if the file is in read-only mode
    */
   public void directWrite(long offset, byte[] data) throws IOException {
-    checkNotInReadOnlyMode();
     directWrite(offset, data, 0, data.length);
   }
 
