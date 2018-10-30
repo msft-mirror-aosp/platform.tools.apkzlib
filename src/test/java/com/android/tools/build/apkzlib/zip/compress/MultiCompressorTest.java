@@ -29,9 +29,6 @@ import com.android.tools.build.apkzlib.zip.ZFileOptions;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Random;
 import java.util.zip.Deflater;
 import org.junit.Rule;
 import org.junit.Test;
@@ -157,7 +154,7 @@ public class MultiCompressorTest {
     File zip = new File(temporaryFolder.getRoot(), "test.zip");
 
     try (ZFile zf = new ZFile(zip)) {
-      zf.add("file", new RandomDataInputStream(2200000000L));
+      zf.add("file", new RandomDataInputStream(2_200_000_000L));
       StoredEntry entry = zf.get("file");
       assertNotNull(entry);
 

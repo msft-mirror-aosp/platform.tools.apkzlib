@@ -35,7 +35,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
-import com.google.common.io.ByteSource;
 import com.google.common.io.Closer;
 import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.FutureCallback;
@@ -1308,15 +1307,14 @@ public class ZFile implements Closeable {
     // Put header data to the beginning of buffer
     int readOffset = entry.toHeaderData(chunk);
     long writeOffset = offset;
-    InputStream is = entry.getSource().getRawByteSource().openStream();
-    while ((r = is.read(chunk, readOffset, chunk.length - readOffset)) >= 0 || readOffset > 0) {
-      int toWrite = (r == -1 ? 0 : r) + readOffset;
-      directWrite(writeOffset, chunk, 0, toWrite);
-      writeOffset += toWrite;
-      readOffset = 0;
+    try (InputStream is = entry.getSource().getRawByteSource().openStream()) {
+      while ((r = is.read(chunk, readOffset, chunk.length - readOffset)) >= 0 || readOffset > 0) {
+        int toWrite = (r == -1 ? 0 : r) + readOffset;
+        directWrite(writeOffset, chunk, 0, toWrite);
+        writeOffset += toWrite;
+        readOffset = 0;
+      }
     }
-
-    is.close();
 
     /*
      * Set the entry's offset and create the entry source.
