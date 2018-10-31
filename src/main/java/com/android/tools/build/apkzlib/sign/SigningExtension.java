@@ -19,6 +19,7 @@ import com.android.apksig.ApkSignerEngine;
 import com.android.apksig.ApkVerifier;
 import com.android.apksig.DefaultApkSignerEngine;
 import com.android.apksig.apk.ApkFormatException;
+import com.android.apksig.util.DataSink;
 import com.android.apksig.util.DataSource;
 import com.android.apksig.util.DataSources;
 import com.android.tools.build.apkzlib.utils.IOExceptionRunnable;
@@ -27,8 +28,10 @@ import com.android.tools.build.apkzlib.zip.ZFile;
 import com.android.tools.build.apkzlib.zip.ZFileExtension;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -50,6 +53,8 @@ import javax.annotation.Nullable;
  * to this extension's constructor.
  */
 public class SigningExtension {
+  private static final int MAX_READ_CHUNK_SIZE = 65536;
+
   // IMPLEMENTATION NOTE: Most of the heavy lifting is performed by the ApkSignerEngine primitive
   // from apksig library. This class is an adapter between ZFile extension and ApkSignerEngine.
   // This class takes care of invoking the right methods on ApkSignerEngine in response to ZFile
@@ -228,9 +233,19 @@ public class SigningExtension {
     ApkSignerEngine.InspectJarEntryRequest inspectEntryRequest = signer.outputJarEntry(entryName);
     signerProcessedOutputEntryNames.add(entryName);
     if (inspectEntryRequest != null) {
-      byte[] entryContents = entry.read();
-      inspectEntryRequest.getDataSink().consume(entryContents, 0, entryContents.length);
+      try (InputStream inputStream = new BufferedInputStream(entry.open())) {
+        copyStreamToDataSink(inputStream, inspectEntryRequest.getDataSink());
+      }
       inspectEntryRequest.done();
+    }
+  }
+
+  private static void copyStreamToDataSink(InputStream inputStream, DataSink dataSink)
+      throws IOException {
+    byte[] buffer = new byte[MAX_READ_CHUNK_SIZE];
+    int bytesRead;
+    while ((bytesRead = inputStream.read(buffer)) > 0) {
+      dataSink.consume(buffer, 0, bytesRead);
     }
   }
 
