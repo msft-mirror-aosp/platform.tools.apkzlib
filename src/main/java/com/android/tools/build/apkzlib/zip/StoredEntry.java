@@ -640,8 +640,8 @@ public class StoredEntry {
 
   /**
    * Obtains the local header data.
-   * @param buffer a buffer to write header data to
    *
+   * @param buffer a buffer to write header data to
    * @return the header data size
    * @throws IOException failed to get header byte data
    */

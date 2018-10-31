@@ -138,7 +138,8 @@ public class FullApkSignTest {
         SignatureTestUtils.generateAnother(signingData);
 
     /* Resign the zip. */
-    SigningOptions signingOptions = new SigningOptions(newSigningData.v1, newSigningData.v2, false, true, 13);
+    SigningOptions signingOptions =
+        new SigningOptions(newSigningData.v1, newSigningData.v2, false, true, 13);
     try (ZFile zf = new ZFile(out)) {
       new SigningExtension(signingOptions).register(zf);
     }

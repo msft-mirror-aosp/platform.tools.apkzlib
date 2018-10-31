@@ -53,17 +53,18 @@ public class JarSigningTest {
       SignatureTestUtils.getAllSigningData();
 
   private static SigningOptions createSigningOptionsV1(
-          ApkZLibPair<PrivateKey, X509Certificate> signingData) {
-    return createSigningOptionsV1(signingData, SignatureTestUtils.getApiLevelForKey(signingData.v1));
+      ApkZLibPair<PrivateKey, X509Certificate> signingData) {
+    return createSigningOptionsV1(
+        signingData, SignatureTestUtils.getApiLevelForKey(signingData.v1));
   }
 
   private static SigningOptions createSigningOptionsV1(
-          ApkZLibPair<PrivateKey, X509Certificate> signingData, int minSdk) {
+      ApkZLibPair<PrivateKey, X509Certificate> signingData, int minSdk) {
     return new SigningOptions(signingData.v1, signingData.v2, true, false, minSdk);
   }
 
   private static SigningOptions createSigningOptionsV2(
-          ApkZLibPair<PrivateKey, X509Certificate> signingData) {
+      ApkZLibPair<PrivateKey, X509Certificate> signingData) {
     return new SigningOptions(signingData.v1, signingData.v2, false, true, 12);
   }
 
