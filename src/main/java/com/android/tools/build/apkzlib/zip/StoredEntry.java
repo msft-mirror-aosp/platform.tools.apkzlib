@@ -287,7 +287,7 @@ public class StoredEntry {
    * @throws IOException failed to read the file
    */
   public byte[] read() throws IOException {
-    try (InputStream is = open()) {
+    try (InputStream is = new BufferedInputStream(open())) {
       return ByteStreams.toByteArray(is);
     }
   }
