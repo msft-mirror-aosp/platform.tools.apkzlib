@@ -57,6 +57,10 @@ public class ZFileOptions {
     compressor = new DeflateExecutionCompressor(Runnable::run, Deflater.DEFAULT_COMPRESSION);
     alignmentRule = AlignmentRules.compose();
     verifyLogFactory = VerifyLogs::devNull;
+
+    // We set this to true because many utilities stream the zip and expect no space between entries
+    // in the zip file.
+    coverEmptySpaceUsingExtraField = true;
   }
 
   /**

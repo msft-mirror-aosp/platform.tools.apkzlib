@@ -34,9 +34,9 @@ public class ZFileReadOnlyTest {
   @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @Test
-  public void cannotCreateRoFileOnNonExistingFile() throws Exception {
+  public void cannotCreateRoFileOnNonExistingFile() {
     try {
-      new ZFile(new File(temporaryFolder.getRoot(), "foo.zip"), new ZFileOptions(), true);
+      ZFile.openReadOnly(new File(temporaryFolder.getRoot(), "foo.zip"), new ZFileOptions());
       fail();
     } catch (IOException e) {
       // Expected.
@@ -45,7 +45,7 @@ public class ZFileReadOnlyTest {
 
   private File makeTestZip() throws IOException {
     File zip = new File(temporaryFolder.getRoot(), "foo.zip");
-    try (ZFile zf = new ZFile(zip)) {
+    try (ZFile zf = ZFile.openReadWrite(zip)) {
       zf.add("bar", new ByteArrayInputStream(new byte[] {0, 1, 2, 3, 4, 5}));
     }
 
@@ -54,19 +54,19 @@ public class ZFileReadOnlyTest {
 
   @Test
   public void cannotUpdateInRoMode() throws Exception {
-    try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
       try {
         zf.update();
         fail();
       } catch (IllegalStateException e) {
-        // Expeted.
+        // Expected.
       }
     }
   }
 
   @Test
   public void cannotAddFilesInRoMode() throws Exception {
-    try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
       try {
         zf.add(
             "bar2",
@@ -76,7 +76,7 @@ public class ZFileReadOnlyTest {
                 }));
         fail();
       } catch (IllegalStateException e) {
-        // Expeted.
+        // Expected.
       }
     }
   }
@@ -84,51 +84,51 @@ public class ZFileReadOnlyTest {
   @Test
   public void cannotAddRecursivelyInRoMode() throws Exception {
     File folder = temporaryFolder.newFolder();
-    try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
       try {
         zf.addAllRecursively(folder);
         fail();
       } catch (IllegalStateException e) {
-        // Expeted.
+        // Expected.
       }
     }
   }
 
   @Test
   public void cannotReplaceFilesInRoMode() throws Exception {
-    try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
       try {
         zf.add("bar", new ByteArrayInputStream(new byte[] {6, 7}));
         fail();
       } catch (IllegalStateException e) {
-        // Expeted.
+        // Expected.
       }
     }
   }
 
   @Test
   public void cannotDeleteFilesInRoMode() throws Exception {
-    try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
       StoredEntry bar = zf.get("bar");
       assertNotNull(bar);
       try {
         bar.delete();
         fail();
       } catch (IllegalStateException e) {
-        // Expeted.
+        // Expected.
       }
     }
   }
 
   @Test
   public void cannotMergeInRoMode() throws Exception {
-    try (ZFile toMerge = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
-      try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile toMerge = ZFile.openReadWrite(new File(temporaryFolder.getRoot(), "a.zip"))) {
+      try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
         try {
           zf.mergeFrom(toMerge, s -> false);
           fail();
         } catch (IllegalStateException e) {
-          // Expeted.
+          // Expected.
         }
       }
     }
@@ -136,91 +136,91 @@ public class ZFileReadOnlyTest {
 
   @Test
   public void cannotTouchInRoMode() throws Exception {
-    try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
       try {
         zf.touch();
         fail();
       } catch (IllegalStateException e) {
-        // Expeted.
+        // Expected.
       }
     }
   }
 
   @Test
   public void cannotRealignInRoMode() throws Exception {
-    try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
       try {
         zf.realign();
         fail();
       } catch (IllegalStateException e) {
-        // Expeted.
+        // Expected.
       }
     }
   }
 
   @Test
   public void cannotAddExtensionInRoMode() throws Exception {
-    try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
       try {
         zf.addZFileExtension(new ZFileExtension() {});
         fail();
       } catch (IllegalStateException e) {
-        // Expeted.
+        // Expected.
       }
     }
   }
 
   @Test
   public void cannotDirectWriteInRoMode() throws Exception {
-    try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
       try {
         zf.directWrite(0, new byte[1]);
         fail();
       } catch (IllegalStateException e) {
-        // Expeted.
+        // Expected.
       }
     }
   }
 
   @Test
   public void cannotSetEocdCommentInRoMode() throws Exception {
-    try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
       try {
         zf.setEocdComment(new byte[2]);
         fail();
       } catch (IllegalStateException e) {
-        // Expeted.
+        // Expected.
       }
     }
   }
 
   @Test
   public void cannotSetCentralDirectoryOffsetInRoMode() throws Exception {
-    try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
       try {
         zf.setExtraDirectoryOffset(4);
         fail();
       } catch (IllegalStateException e) {
-        // Expeted.
+        // Expected.
       }
     }
   }
 
   @Test
   public void cannotSortZipContentsInRoMode() throws Exception {
-    try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
       try {
         zf.sortZipContents();
         fail();
       } catch (IllegalStateException e) {
-        // Expeted.
+        // Expected.
       }
     }
   }
 
   @Test
   public void canOpenAndReadFilesInRoMode() throws Exception {
-    try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
       StoredEntry bar = zf.get("bar");
       assertNotNull(bar);
       assertArrayEquals(new byte[] {0, 1, 2, 3, 4, 5}, bar.read());
@@ -229,7 +229,7 @@ public class ZFileReadOnlyTest {
 
   @Test
   public void canGetDirectoryAndEocdBytesInRoMode() throws Exception {
-    try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
       zf.getCentralDirectoryBytes();
       zf.getEocdBytes();
       zf.getEocdComment();
@@ -238,7 +238,7 @@ public class ZFileReadOnlyTest {
 
   @Test
   public void canDirectReadInRoMode() throws Exception {
-    try (ZFile zf = new ZFile(makeTestZip(), new ZFileOptions(), true)) {
+    try (ZFile zf = ZFile.openReadOnly(makeTestZip(), new ZFileOptions())) {
       zf.directRead(0, new byte[2]);
     }
   }

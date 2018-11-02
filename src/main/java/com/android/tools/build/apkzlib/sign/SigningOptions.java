@@ -20,19 +20,22 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
  * A class that contains data to initialize SigningExtension
  */
 public class SigningOptions {
-    /** Key used to sign the APK. May be {@code null}. */
+    /** Key used to sign the APK. */
+    @Nullable
     private final PrivateKey key;
 
     /**
      * Certificates used to sign the APK. Is {@code isEmpty()} if and only if {@link #key} is {@code
      * null}.
      */
+    @Nonnull
     private final ImmutableList<X509Certificate> certs;
 
     /** Whether signing the APK with JAR Signing Scheme (aka v1 signing) is enabled. */
@@ -64,7 +67,7 @@ public class SigningOptions {
      */
     public SigningOptions(
             @Nullable PrivateKey key,
-            ImmutableList<X509Certificate> certs,
+            @Nonnull ImmutableList<X509Certificate> certs,
             boolean v1SigningEnabled,
             boolean v2SigningEnabled,
             int minSdkVersion) {
@@ -84,6 +87,7 @@ public class SigningOptions {
         return key;
     }
 
+    @Nonnull
     public ImmutableList<X509Certificate> getCertificates() {
         return certs;
     }

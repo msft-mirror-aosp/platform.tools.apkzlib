@@ -77,7 +77,7 @@ public class ZFileSortTest {
       options = new ZFileOptions();
     }
 
-    zFile = new ZFile(file, options);
+    zFile = ZFile.openReadWrite(file, options);
 
     zFile.add("Mary.xml", new ByteArrayInputStream(new byte[] {1, 2, 3}));
     zFile.add("Andrew.txt", new ByteArrayInputStream(new byte[] {4, 5}));
@@ -191,7 +191,7 @@ public class ZFileSortTest {
 
     ZFileOptions options = new ZFileOptions();
     options.setAlignmentRule(AlignmentRules.constantForSuffix(".xml", 1024));
-    zFile = new ZFile(file, options);
+    zFile = ZFile.openReadWrite(file, options);
 
     zFile.sortZipContents();
     zFile.update();
@@ -206,7 +206,7 @@ public class ZFileSortTest {
   @Test
   public void sortFilesOnClosedFile() throws Exception {
     zFile.close();
-    zFile = new ZFile(file);
+    zFile = ZFile.openReadWrite(file);
     zFile.sortZipContents();
     zFile.update();
 

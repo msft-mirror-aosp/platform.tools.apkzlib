@@ -56,7 +56,7 @@ public class AlignmentTest {
 
     ZFileOptions options = new ZFileOptions();
     options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
-    try (ZFile zf = new ZFile(newZFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(newZFile, options)) {
       zf.add("test.txt", new ByteArrayInputStream(testBytes), false);
     }
 
@@ -72,7 +72,7 @@ public class AlignmentTest {
 
     ZFileOptions options = new ZFileOptions();
     options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
-    try (ZFile zf = new ZFile(newZFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(newZFile, options)) {
       zf.add("test.txt.foo", new ByteArrayInputStream(testBytes), false);
     }
 
@@ -87,7 +87,9 @@ public class AlignmentTest {
     byte[] testBytes1 = "Text number 2, which is actually 1".getBytes(Charsets.US_ASCII);
 
     long offset0;
-    try (ZFile zf = new ZFile(newZFile)) {
+    try (ZFile zf =
+        ZFile.openReadWrite(
+            newZFile, new ZFileOptions().setCoverEmptySpaceUsingExtraField(false))) {
       zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
       zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
       zf.close();
@@ -104,7 +106,8 @@ public class AlignmentTest {
 
     ZFileOptions options = new ZFileOptions();
     options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
-    try (ZFile zf = new ZFile(newZFile, options)) {
+    options.setCoverEmptySpaceUsingExtraField(false);
+    try (ZFile zf = ZFile.openReadWrite(newZFile, options)) {
       StoredEntry se1 = zf.get("file1.txt");
       assertNotNull(se1);
       se1.realign();
@@ -131,7 +134,7 @@ public class AlignmentTest {
     byte[] testBytes0 = "Text number 1".getBytes(Charsets.US_ASCII);
     byte[] testBytes1 = "Text number 2, which is actually 1".getBytes(Charsets.US_ASCII);
 
-    try (ZFile zf = new ZFile(newZFile)) {
+    try (ZFile zf = ZFile.openReadWrite(newZFile)) {
       zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
       zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
     }
@@ -140,7 +143,7 @@ public class AlignmentTest {
 
     ZFileOptions options = new ZFileOptions();
     options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
-    try (ZFile zf = new ZFile(newZFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(newZFile, options)) {
       zf.realign();
       zf.update();
 
@@ -174,7 +177,7 @@ public class AlignmentTest {
 
     ZFileOptions options = new ZFileOptions();
     options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
-    try (ZFile zf = new ZFile(newZFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(newZFile, options)) {
       zf.add("test.txt", new ByteArrayInputStream(testBytes), false);
     }
 
@@ -182,7 +185,7 @@ public class AlignmentTest {
 
     int flen = (int) newZFile.length();
 
-    try (ZFile zf = new ZFile(newZFile)) {
+    try (ZFile zf = ZFile.openReadWrite(newZFile)) {
       StoredEntry entry = zf.get("test.txt");
       assertNotNull(entry);
       assertFalse(entry.realign());
@@ -199,13 +202,13 @@ public class AlignmentTest {
     byte[] testBytes0 = "Text number 1".getBytes(Charsets.US_ASCII);
     byte[] testBytes1 = "Text number 2, which is actually 1".getBytes(Charsets.US_ASCII);
 
-    try (ZFile zf = new ZFile(newZFile)) {
+    try (ZFile zf = ZFile.openReadWrite(newZFile)) {
       zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
     }
 
     ZFileOptions options = new ZFileOptions();
     options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
-    try (ZFile zf = new ZFile(newZFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(newZFile, options)) {
       zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
       zf.update();
 
@@ -239,7 +242,7 @@ public class AlignmentTest {
 
     ZFileOptions options = new ZFileOptions();
     options.setAlignmentRule(AlignmentRules.constant(10));
-    try (ZFile zf = new ZFile(zipFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, options)) {
       zf.realign();
     }
   }
@@ -253,7 +256,7 @@ public class AlignmentTest {
     ZFileOptions options = new ZFileOptions();
     options.setCoverEmptySpaceUsingExtraField(true);
     options.setAlignmentRule(AlignmentRules.constant(1024));
-    try (ZFile zf = new ZFile(zipFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, options)) {
       zf.add("foo", new ByteArrayInputStream(recognizable), false);
     }
 
@@ -265,7 +268,7 @@ public class AlignmentTest {
     /*
      * But local header should be in the beginning.
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry entry = zf.get("foo");
       assertNotNull(entry);
       assertEquals(0, entry.getCentralDirectoryHeader().getOffset());
@@ -281,7 +284,7 @@ public class AlignmentTest {
     ZFileOptions options = new ZFileOptions();
     options.setCoverEmptySpaceUsingExtraField(false);
     options.setAlignmentRule(AlignmentRules.constant(1024));
-    try (ZFile zf = new ZFile(zipFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, options)) {
       zf.add("foo", new ByteArrayInputStream(recognizable), false);
     }
 
@@ -293,7 +296,7 @@ public class AlignmentTest {
     /*
      * Local header should start at 991 (1024 - LOCAL_HEADER_SIZE - 3).
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry entry = zf.get("foo");
       assertNotNull(entry);
       assertEquals(991, entry.getCentralDirectoryHeader().getOffset());
@@ -309,7 +312,7 @@ public class AlignmentTest {
     ZFileOptions options = new ZFileOptions();
     options.setCoverEmptySpaceUsingExtraField(true);
     options.setAlignmentRule(SUFFIX_ALIGNMENT_RULES);
-    try (ZFile zf = new ZFile(zipFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, options)) {
       zf.add("first.u", new ByteArrayInputStream(new byte[1024]), false);
       zf.add("middle.a", new ByteArrayInputStream(recognizable), false);
       zf.add("last.u", new ByteArrayInputStream(new byte[1024]), false);
@@ -323,7 +326,7 @@ public class AlignmentTest {
     /*
      * But local header should be right after the first entry.
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry middleEntry = zf.get("middle.a");
       assertNotNull(middleEntry);
       assertEquals(
@@ -341,7 +344,7 @@ public class AlignmentTest {
     ZFileOptions options = new ZFileOptions();
     options.setCoverEmptySpaceUsingExtraField(false);
     options.setAlignmentRule(AlignmentRules.constantForSuffix(".a", 1024));
-    try (ZFile zf = new ZFile(zipFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, options)) {
       zf.add("bar1", new ByteArrayInputStream(new byte[1024]), false);
       zf.add("foo.a", new ByteArrayInputStream(recognizable), false);
       zf.add("bar2", new ByteArrayInputStream(new byte[1024]), false);
@@ -355,7 +358,7 @@ public class AlignmentTest {
     /*
      * Local header should start at 2015 (2048 - LOCAL_HEADER_SIZE - 5).
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry entry = zf.get("foo.a");
       assertNotNull(entry);
       assertEquals(2013, entry.getCentralDirectoryHeader().getOffset());
@@ -373,7 +376,7 @@ public class AlignmentTest {
     ZFileOptions options = new ZFileOptions();
     options.setCoverEmptySpaceUsingExtraField(false);
     options.setAlignmentRule(AlignmentRules.constant(fixedLh));
-    try (ZFile zf = new ZFile(zipFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, options)) {
       zf.add("f", new ByteArrayInputStream(recognizable), false);
     }
 
@@ -391,7 +394,7 @@ public class AlignmentTest {
     ZFileOptions options = new ZFileOptions();
     options.setCoverEmptySpaceUsingExtraField(true);
     options.setAlignmentRule(AlignmentRules.constant(fixedLh));
-    try (ZFile zf = new ZFile(zipFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, options)) {
       zf.add("f", new ByteArrayInputStream(recognizable), false);
     }
 
@@ -408,7 +411,7 @@ public class AlignmentTest {
     ZFileOptions options = new ZFileOptions();
     options.setCoverEmptySpaceUsingExtraField(true);
     options.setAlignmentRule(SUFFIX_ALIGNMENT_RULES);
-    try (ZFile zf = new ZFile(zipFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, options)) {
       zf.add("f.a", new ByteArrayInputStream(recognizable1), false);
       zf.add("f.u", new ByteArrayInputStream(recognizable2), false);
     }
@@ -431,11 +434,11 @@ public class AlignmentTest {
     ZFileOptions options = new ZFileOptions();
     options.setCoverEmptySpaceUsingExtraField(true);
     options.setAlignmentRule(AlignmentRules.constantForSuffix(".a", 1024));
-    try (ZFile zf = new ZFile(zipFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, options)) {
       zf.add("f.a", new ByteArrayInputStream(recognizable1), false);
     }
 
-    try (ZFile zf = new ZFile(zipFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, options)) {
       zf.add("f.b", new ByteArrayInputStream(recognizable2), false);
     }
 
@@ -456,7 +459,7 @@ public class AlignmentTest {
     ZFileOptions options = new ZFileOptions();
     options.setCoverEmptySpaceUsingExtraField(true);
     options.setAlignmentRule(SUFFIX_ALIGNMENT_RULES);
-    try (ZFile zf = new ZFile(zipFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, options)) {
       zf.add("first.u", new ByteArrayInputStream(recognizable1), false);
       zf.add("second.u", new ByteArrayInputStream(recognizable2), false);
 
@@ -467,7 +470,7 @@ public class AlignmentTest {
       firstEntry.delete();
     }
 
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       Set<StoredEntry> entries = zf.entries();
       assertEquals(1, entries.size());
 
@@ -491,7 +494,7 @@ public class AlignmentTest {
     ZFileOptions options = new ZFileOptions();
     options.setCoverEmptySpaceUsingExtraField(true);
     options.setAlignmentRule(SUFFIX_ALIGNMENT_RULES);
-    try (ZFile zf = new ZFile(zipFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, options)) {
       zf.add("begin.u", new ByteArrayInputStream(recognizable1), false);
       zf.add("middle.u", new ByteArrayInputStream(bigEmpty), false);
       zf.add("end.u", new ByteArrayInputStream(recognizable2), false);
@@ -539,7 +542,8 @@ public class AlignmentTest {
      * 103   | 133        | 136      | 144          | "foo"
      * 144   | 174        | 196      | 396          | "File taking more space"
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf =
+        ZFile.openReadWrite(zipFile, new ZFileOptions().setCoverEmptySpaceUsingExtraField(false))) {
       zf.add("File taking exactly 103 bytes", new ByteArrayInputStream(fourtyFour), false);
       zf.add("foo", new ByteArrayInputStream(recognizable), false);
       zf.add("File taking more space", new ByteArrayInputStream(twoHundred), false);
@@ -552,7 +556,8 @@ public class AlignmentTest {
     /*
      * Remove the middle file.
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf =
+        ZFile.openReadWrite(zipFile, new ZFileOptions().setCoverEmptySpaceUsingExtraField(false))) {
       StoredEntry fooEntry = zf.get("foo");
       assertNotNull(fooEntry);
       fooEntry.delete();
@@ -567,7 +572,7 @@ public class AlignmentTest {
     ZFileOptions zfo = new ZFileOptions();
     zfo.setCoverEmptySpaceUsingExtraField(true);
     zfo.setAlignmentRule(AlignmentRules.constant(4));
-    try (ZFile zf = new ZFile(zipFile, zfo)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, zfo)) {
       zf.add("bar", new ByteArrayInputStream(recognizable2), false);
     }
 
@@ -594,7 +599,8 @@ public class AlignmentTest {
      * 103   | 133        | 136      | 152          | "foo"
      * 152   | 182        | 204      | 404          | "File taking more space"
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf =
+        ZFile.openReadWrite(zipFile, new ZFileOptions().setCoverEmptySpaceUsingExtraField(false))) {
       zf.add("File taking exactly 103 bytes", new ByteArrayInputStream(fourtyFour), false);
       zf.add("foo", new ByteArrayInputStream(recognizable), false);
       zf.add("File taking more space", new ByteArrayInputStream(twoHundred), false);
@@ -607,7 +613,8 @@ public class AlignmentTest {
     /*
      * Remove the middle file.
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf =
+        ZFile.openReadWrite(zipFile, new ZFileOptions().setCoverEmptySpaceUsingExtraField(false))) {
       StoredEntry fooEntry = zf.get("foo");
       assertNotNull(fooEntry);
       fooEntry.delete();
@@ -627,7 +634,7 @@ public class AlignmentTest {
     ZFileOptions zfo = new ZFileOptions();
     zfo.setCoverEmptySpaceUsingExtraField(true);
     zfo.setAlignmentRule(AlignmentRules.constant(4));
-    try (ZFile zf = new ZFile(zipFile, zfo)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, zfo)) {
       zf.add("bar", new ByteArrayInputStream(recognizable2), false);
     }
 
@@ -654,7 +661,7 @@ public class AlignmentTest {
      * 103   | 133        | 136      | 152          | "foo"
      * 152   | 182        | 204      | 404          | "File taking more space"
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       zf.add("File taking exactly 103 bytes", new ByteArrayInputStream(fourtyFour), false);
       zf.add("foo", new ByteArrayInputStream(recognizable), false);
       zf.add("File taking more space", new ByteArrayInputStream(twoHundred), false);
@@ -667,7 +674,7 @@ public class AlignmentTest {
     /*
      * Remove the middle file.
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry fooEntry = zf.get("foo");
       assertNotNull(fooEntry);
       fooEntry.delete();
@@ -695,7 +702,7 @@ public class AlignmentTest {
     ZFileOptions zfo = new ZFileOptions();
     zfo.setCoverEmptySpaceUsingExtraField(true);
     zfo.setAlignmentRule(AlignmentRules.constant(4));
-    try (ZFile zf = new ZFile(zipFile, zfo)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, zfo)) {
       zf.add("bar", new ByteArrayInputStream(recognizable2), false);
     }
 
@@ -722,7 +729,8 @@ public class AlignmentTest {
      * 103   | 133        | 136      | 152          | "foo"
      * 152   | 182        | 204      | 404          | "File taking more space"
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf =
+        ZFile.openReadWrite(zipFile, new ZFileOptions().setCoverEmptySpaceUsingExtraField(false))) {
       zf.add("File taking exactly 103 bytes", new ByteArrayInputStream(fourtyFour), false);
       zf.add("foo", new ByteArrayInputStream(recognizable), false);
       zf.add("File taking more space", new ByteArrayInputStream(twoHundred), false);
@@ -735,7 +743,8 @@ public class AlignmentTest {
     /*
      * Remove the middle file.
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf =
+        ZFile.openReadWrite(zipFile, new ZFileOptions().setCoverEmptySpaceUsingExtraField(false))) {
       StoredEntry fooEntry = zf.get("foo");
       assertNotNull(fooEntry);
       fooEntry.delete();
@@ -755,7 +764,7 @@ public class AlignmentTest {
     ZFileOptions zfo = new ZFileOptions();
     zfo.setCoverEmptySpaceUsingExtraField(true);
     zfo.setAlignmentRule(AlignmentRules.constant(10));
-    try (ZFile zf = new ZFile(zipFile, zfo)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, zfo)) {
       zf.add("bar", new ByteArrayInputStream(recognizable2), false);
     }
 
@@ -770,7 +779,7 @@ public class AlignmentTest {
     ZFileOptions options = new ZFileOptions();
     options.setCoverEmptySpaceUsingExtraField(true);
     options.setAlignmentRule(AlignmentRules.constant(100));
-    try (ZFile zf = new ZFile(zipFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, options)) {
       zf.add("foo", new ByteArrayInputStream(new byte[] {1, 2, 3, 4}));
       StoredEntry foo = zf.get("foo");
       assertNotNull(foo);
@@ -790,7 +799,7 @@ public class AlignmentTest {
     ZFileOptions options = new ZFileOptions();
     options.setCoverEmptySpaceUsingExtraField(true);
     options.setAlignmentRule(AlignmentRules.constant(4));
-    try (ZFile zf = new ZFile(zipFile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile, options)) {
       // File header starts at 0.
       // File name starts at 30 (LOCAL_HEADER_SIZE).
       // If unaligned we would have data starting at 33, but with aligned we have data

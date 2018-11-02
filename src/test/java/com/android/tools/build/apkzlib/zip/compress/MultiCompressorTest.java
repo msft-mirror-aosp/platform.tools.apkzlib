@@ -29,9 +29,6 @@ import com.android.tools.build.apkzlib.zip.ZFileOptions;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Random;
 import java.util.zip.Deflater;
 import org.junit.Rule;
 import org.junit.Test;
@@ -64,7 +61,7 @@ public class MultiCompressorTest {
   public void storeIsBest() throws Exception {
     File zip = new File(temporaryFolder.getRoot(), "test.zip");
 
-    try (ZFile zf = new ZFile(zip)) {
+    try (ZFile zf = ZFile.openReadWrite(zip)) {
       zf.add("file", new ByteArrayInputStream(new byte[0]));
       StoredEntry entry = zf.get("file");
       assertNotNull(entry);
@@ -83,7 +80,7 @@ public class MultiCompressorTest {
 
     byte[] data = new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    try (ZFile zf = new ZFile(zip)) {
+    try (ZFile zf = ZFile.openReadWrite(zip)) {
       zf.add("file", new ByteArrayInputStream(data));
       StoredEntry entry = zf.get("file");
       assertNotNull(entry);
@@ -112,8 +109,8 @@ public class MultiCompressorTest {
     resultOptions.setCompressor(
         new BestAndDefaultDeflateExecutorCompressor(MoreExecutors.directExecutor(), ratio + 0.001));
 
-    try (ZFile defaultZFile = new ZFile(defaultFile);
-        ZFile resultZFile = new ZFile(resultFile, resultOptions)) {
+    try (ZFile defaultZFile = ZFile.openReadWrite(defaultFile);
+        ZFile resultZFile = ZFile.openReadWrite(resultFile, resultOptions)) {
       defaultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
       resultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
     }
@@ -140,8 +137,8 @@ public class MultiCompressorTest {
     resultOptions.setCompressor(
         new BestAndDefaultDeflateExecutorCompressor(MoreExecutors.directExecutor(), ratio - 0.001));
 
-    try (ZFile defaultZFile = new ZFile(defaultFile);
-        ZFile resultZFile = new ZFile(resultFile, resultOptions)) {
+    try (ZFile defaultZFile = ZFile.openReadWrite(defaultFile);
+        ZFile resultZFile = ZFile.openReadWrite(resultFile, resultOptions)) {
       defaultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
       resultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
     }
@@ -157,7 +154,7 @@ public class MultiCompressorTest {
     File zip = new File(temporaryFolder.getRoot(), "test.zip");
 
     try (ZFile zf = new ZFile(zip)) {
-      zf.add("file", new RandomDataInputStream(2200000000L));
+      zf.add("file", new RandomDataInputStream(2_200_000_000L));
       StoredEntry entry = zf.get("file");
       assertNotNull(entry);
 

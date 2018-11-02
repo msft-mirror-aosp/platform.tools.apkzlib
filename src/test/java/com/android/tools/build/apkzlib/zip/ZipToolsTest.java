@@ -115,7 +115,7 @@ public class ZipToolsTest {
 
   @Test
   public void zfileReadsZipFile() throws Exception {
-    try (ZFile zf = new ZFile(cloneZipFile())) {
+    try (ZFile zf = ZFile.openReadWrite(cloneZipFile())) {
       if (toolStoresDirectories) {
         assertEquals(6, zf.entries().size());
       } else {
@@ -149,7 +149,7 @@ public class ZipToolsTest {
     }
 
     File zfile = new File(temporaryFolder.getRoot(), "zfile.zip");
-    try (ZFile zf = new ZFile(zfile, options)) {
+    try (ZFile zf = ZFile.openReadWrite(zfile, options)) {
       zf.add("root", new ByteArrayInputStream(ZipTestUtils.rsrcBytes("root")));
       zf.add("images/", new ByteArrayInputStream(new byte[0]));
       zf.add(

@@ -507,7 +507,7 @@ public class StoredEntry {
             long dataStart = zipOffset + getLocalHeaderSize();
             long dataEnd = dataStart + compressInfo.getCompressedSize();
 
-            file.openReadOnly();
+            file.openReadOnlyIfClosed();
             return file.directOpen(dataStart, dataEnd);
           }
 
@@ -647,8 +647,9 @@ public class StoredEntry {
    */
   int toHeaderData(byte[] buffer) throws IOException {
     Preconditions.checkArgument(
-            buffer.length >= F_EXTRA_LENGTH.endOffset() + cdh.getEncodedFileName().length + localExtra.size(),
-            "Buffer should be at least the header size");
+        buffer.length
+            >= F_EXTRA_LENGTH.endOffset() + cdh.getEncodedFileName().length + localExtra.size(),
+        "Buffer should be at least the header size");
 
     ByteBuffer out = ByteBuffer.wrap(buffer);
     writeData(out);
