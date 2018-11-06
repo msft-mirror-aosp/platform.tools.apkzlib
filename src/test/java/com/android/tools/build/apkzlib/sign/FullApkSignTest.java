@@ -74,7 +74,7 @@ public class FullApkSignTest {
      * Generate a signed zip.
      */
     SigningOptions signingOptions = new SigningOptions(signData.v1, signData.v2, false, true, 13);
-    try (ZFile zf = new ZFile(file, options)) {
+    try (ZFile zf = ZFile.openReadWrite(file, options)) {
       new SigningExtension(signingOptions).register(zf);
       zf.add(F1_NAME, new ByteArrayInputStream(F1_DATA));
       zf.add(F2_NAME, new ByteArrayInputStream(F2_DATA));
@@ -97,7 +97,7 @@ public class FullApkSignTest {
     /*
      * Read the signed zip.
      */
-    try (ZFile zf = new ZFile(out)) {
+    try (ZFile zf = ZFile.openReadWrite(out)) {
       StoredEntry se1 = zf.get(F1_NAME);
       assertNotNull(se1);
       assertArrayEquals(F1_DATA, se1.read());
@@ -126,7 +126,7 @@ public class FullApkSignTest {
     verifyZipValid(out);
     long sizeAfterSigned = out.length();
     byte[] signatureBlock;
-    try (ZFile zf = new ZFile(out)) {
+    try (ZFile zf = ZFile.openReadWrite(out)) {
       long signBlockEnd = zf.getCentralDirectoryOffset();
       long signBlockStart = zf.getExtraDirectoryOffset();
       assertTrue(signBlockEnd > signBlockStart);
@@ -140,14 +140,14 @@ public class FullApkSignTest {
     /* Resign the zip. */
     SigningOptions signingOptions =
         new SigningOptions(newSigningData.v1, newSigningData.v2, false, true, 13);
-    try (ZFile zf = new ZFile(out)) {
+    try (ZFile zf = ZFile.openReadWrite(out)) {
       new SigningExtension(signingOptions).register(zf);
     }
 
     long newSizeAfterSigned = out.length();
     assertEquals(newSizeAfterSigned, sizeAfterSigned);
     byte[] newSignatureBlock;
-    try (ZFile zf = new ZFile(out)) {
+    try (ZFile zf = ZFile.openReadWrite(out)) {
       long signBlockEnd = zf.getCentralDirectoryOffset();
       long signBlockStart = zf.getExtraDirectoryOffset();
       assertTrue(signBlockEnd > signBlockStart);

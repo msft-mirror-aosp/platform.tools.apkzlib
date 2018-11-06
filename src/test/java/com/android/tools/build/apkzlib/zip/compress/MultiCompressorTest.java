@@ -153,7 +153,7 @@ public class MultiCompressorTest {
   public void testCompressVeryBigStream() throws Exception {
     File zip = new File(temporaryFolder.getRoot(), "test.zip");
 
-    try (ZFile zf = new ZFile(zip)) {
+    try (ZFile zf = ZFile.openReadWrite(zip)) {
       zf.add("file", new RandomDataInputStream(2_200_000_000L));
       StoredEntry entry = zf.get("file");
       assertNotNull(entry);

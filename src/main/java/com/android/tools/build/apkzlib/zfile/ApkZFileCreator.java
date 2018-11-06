@@ -93,7 +93,7 @@ class ApkZFileCreator implements ApkCreator {
 
     Closer closer = Closer.create();
     try {
-      ZFile toMerge = closer.register(new ZFile(zip));
+      ZFile toMerge = closer.register(ZFile.openReadWrite(zip));
 
       Predicate<String> ignorePredicate;
       if (isIgnored == null) {

@@ -74,7 +74,7 @@ public class JarSigningTest {
       throws Exception {
     File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
 
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       ApkZFileTestUtils.addAndroidManifest(zf);
       ManifestGenerationExtension manifestExtension = new ManifestGenerationExtension("Me", "Me");
       manifestExtension.register(zf);
@@ -82,7 +82,7 @@ public class JarSigningTest {
       new SigningExtension(createSigningOptionsV1(signingData)).register(zf);
     }
 
-    try (ZFile verifyZFile = new ZFile(zipFile)) {
+    try (ZFile verifyZFile = ZFile.openReadWrite(zipFile)) {
       StoredEntry manifestEntry = verifyZFile.get("META-INF/MANIFEST.MF");
       assertNotNull(manifestEntry);
 
@@ -100,19 +100,19 @@ public class JarSigningTest {
       throws Exception {
     File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
 
-    try (ZFile zf1 = new ZFile(zipFile)) {
+    try (ZFile zf1 = ZFile.openReadWrite(zipFile)) {
       ApkZFileTestUtils.addAndroidManifest(zf1);
       zf1.add(
           "directory/file", new ByteArrayInputStream("useless text".getBytes(Charsets.US_ASCII)));
     }
 
-    try (ZFile zf2 = new ZFile(zipFile)) {
+    try (ZFile zf2 = ZFile.openReadWrite(zipFile)) {
       ManifestGenerationExtension me = new ManifestGenerationExtension("Merry", "Christmas");
       me.register(zf2);
       new SigningExtension(createSigningOptionsV1(signingData)).register(zf2);
     }
 
-    try (ZFile zf3 = new ZFile(zipFile)) {
+    try (ZFile zf3 = ZFile.openReadWrite(zipFile)) {
       StoredEntry manifestEntry = zf3.get("META-INF/MANIFEST.MF");
       assertNotNull(manifestEntry);
 
@@ -183,7 +183,7 @@ public class JarSigningTest {
       @FromDataPoints("signing_data") ApkZLibPair<PrivateKey, X509Certificate> signingData)
       throws Exception {
     File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       ApkZFileTestUtils.addAndroidManifest(zf);
       ManifestGenerationExtension manifestExtension = new ManifestGenerationExtension("Me", "Me");
       manifestExtension.register(zf);
@@ -191,7 +191,7 @@ public class JarSigningTest {
       new SigningExtension(createSigningOptionsV2(signingData)).register(zf);
     }
 
-    try (ZFile verifyZFile = new ZFile(zipFile)) {
+    try (ZFile verifyZFile = ZFile.openReadWrite(zipFile)) {
       long centralDirOffset = verifyZFile.getCentralDirectoryOffset();
       byte[] apkSigningBlockMagic = new byte[16];
       verifyZFile.directFullyRead(
@@ -214,7 +214,7 @@ public class JarSigningTest {
     String builtBy = "Santa Claus";
     String createdBy = "Uses Android";
 
-    try (ZFile zf1 = new ZFile(zipFile)) {
+    try (ZFile zf1 = ZFile.openReadWrite(zipFile)) {
       ApkZFileTestUtils.addAndroidManifest(zf1);
       zf1.add(file1Name, new ByteArrayInputStream(file1Contents));
       ManifestGenerationExtension me = new ManifestGenerationExtension(builtBy, createdBy);
@@ -268,7 +268,7 @@ public class JarSigningTest {
     file1Sha = Hashing.sha256().hashBytes(file1Contents).asBytes();
     file1ShaTxt = Base64.getEncoder().encodeToString(file1Sha);
 
-    try (ZFile zf2 = new ZFile(zipFile)) {
+    try (ZFile zf2 = ZFile.openReadWrite(zipFile)) {
       ApkZFileTestUtils.addAndroidManifest(zf2);
       ManifestGenerationExtension me = new ManifestGenerationExtension(builtBy, createdBy);
       me.register(zf2);
@@ -302,7 +302,7 @@ public class JarSigningTest {
     String fileName = "file";
     byte[] fileContents = "Very interesting contents".getBytes(Charsets.US_ASCII);
 
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       ApkZFileTestUtils.addAndroidManifest(zf);
       ManifestGenerationExtension me = new ManifestGenerationExtension("I", "Android");
       me.register(zf);
@@ -318,7 +318,7 @@ public class JarSigningTest {
     /*
      * Open the zip file, but don't touch it.
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       ManifestGenerationExtension me = new ManifestGenerationExtension("I", "Android");
       me.register(zf);
       new SigningExtension(createSigningOptionsV1(signingData, 21)).register(zf);
@@ -333,7 +333,7 @@ public class JarSigningTest {
      * Change the file contents ignoring any signing.
      */
     fileContents = "Not so interesting contents".getBytes(Charsets.US_ASCII);
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       zf.add(fileName, new ByteArrayInputStream(fileContents));
     }
 
@@ -355,7 +355,7 @@ public class JarSigningTest {
      * Open the zip file, but do any changes. The need to updating the signature should force
      * a file update.
      */
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       ManifestGenerationExtension me = new ManifestGenerationExtension("I", "Android");
       me.register(zf);
       new SigningExtension(createSigningOptionsV1(signingData, 21)).register(zf);

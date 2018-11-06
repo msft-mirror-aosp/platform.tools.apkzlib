@@ -112,7 +112,7 @@ public class ZFileNotificationTest {
 
   @Test
   public void notifyAddFile() throws Exception {
-    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+    try (ZFile zf = ZFile.openReadWrite(new File(temporaryFolder.getRoot(), "a.zip"))) {
       KeepListener kl = new KeepListener();
       zf.addZFileExtension(kl);
 
@@ -135,7 +135,7 @@ public class ZFileNotificationTest {
 
   @Test
   public void notifyRemoveFile() throws Exception {
-    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+    try (ZFile zf = ZFile.openReadWrite(new File(temporaryFolder.getRoot(), "a.zip"))) {
       KeepListener kl = new KeepListener();
       zf.addZFileExtension(kl);
 
@@ -158,7 +158,7 @@ public class ZFileNotificationTest {
 
   @Test
   public void notifyUpdateFile() throws Exception {
-    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+    try (ZFile zf = ZFile.openReadWrite(new File(temporaryFolder.getRoot(), "a.zip"))) {
       KeepListener kl = new KeepListener();
       zf.addZFileExtension(kl);
 
@@ -185,7 +185,7 @@ public class ZFileNotificationTest {
   @Test
   public void notifyOpenUpdateClose() throws Exception {
     KeepListener kl = new KeepListener();
-    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+    try (ZFile zf = ZFile.openReadWrite(new File(temporaryFolder.getRoot(), "a.zip"))) {
       zf.addZFileExtension(kl);
 
       kl.assertClear();
@@ -209,7 +209,7 @@ public class ZFileNotificationTest {
   @Test
   public void notifyOpenUpdate() throws Exception {
     KeepListener kl = new KeepListener();
-    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+    try (ZFile zf = ZFile.openReadWrite(new File(temporaryFolder.getRoot(), "a.zip"))) {
       zf.addZFileExtension(kl);
 
       kl.assertClear();
@@ -231,7 +231,7 @@ public class ZFileNotificationTest {
 
   @Test
   public void notifyUpdate() throws Exception {
-    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+    try (ZFile zf = ZFile.openReadWrite(new File(temporaryFolder.getRoot(), "a.zip"))) {
       KeepListener kl = new KeepListener();
       zf.addZFileExtension(kl);
 
@@ -256,7 +256,7 @@ public class ZFileNotificationTest {
 
   @Test
   public void removedListenersAreNotNotified() throws Exception {
-    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+    try (ZFile zf = ZFile.openReadWrite(new File(temporaryFolder.getRoot(), "a.zip"))) {
       KeepListener kl = new KeepListener();
       zf.addZFileExtension(kl);
 
@@ -278,7 +278,7 @@ public class ZFileNotificationTest {
 
   @Test
   public void actionsExecutedAtEndOfNotification() throws Exception {
-    try (ZFile zf = new ZFile(new File(temporaryFolder.getRoot(), "a.zip"))) {
+    try (ZFile zf = ZFile.openReadWrite(new File(temporaryFolder.getRoot(), "a.zip"))) {
 
       IOException[] death = new IOException[1];
 
@@ -345,7 +345,7 @@ public class ZFileNotificationTest {
   @Test
   public void canAddFilesDuringUpdateNotification() throws Exception {
     File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       IOException[] death = new IOException[1];
 
       KeepListener kl1 = new KeepListener();
@@ -375,7 +375,7 @@ public class ZFileNotificationTest {
           };
     }
 
-    try (ZFile zf2 = new ZFile(zipFile)) {
+    try (ZFile zf2 = ZFile.openReadWrite(zipFile)) {
       StoredEntry fooFile = zf2.get("foo");
       assertNotNull(fooFile);
       StoredEntry barFile = zf2.get("bar");
@@ -387,7 +387,7 @@ public class ZFileNotificationTest {
   public void notifyOnceEntriesWritten() throws Exception {
     File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
     ZFileExtension ext = Mockito.mock(ZFileExtension.class);
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       zf.addZFileExtension(ext);
 
       zf.add("foo", new ByteArrayInputStream(new byte[] {1, 2}));
@@ -403,7 +403,7 @@ public class ZFileNotificationTest {
   public void notifyTwiceEntriesWrittenIfCdChanged() throws Exception {
     File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
     ZFileExtension ext = Mockito.mock(ZFileExtension.class);
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       Mockito.doAnswer(
               (invocation) -> {
                 zf.setExtraDirectoryOffset(10);

@@ -91,7 +91,7 @@ public class ExtraFieldTest {
       zos.write(new byte[] {1, 2, 3});
     }
 
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry foo = zf.get("foo");
       assertNotNull(foo);
       assertEquals(3, foo.getCentralDirectoryHeader().getUncompressedSize());
@@ -119,7 +119,7 @@ public class ExtraFieldTest {
       zos.write(new byte[] {1, 2, 3});
     }
 
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry foo = zf.get("foo");
       assertNotNull(foo);
       assertEquals(3, foo.getCentralDirectoryHeader().getUncompressedSize());
@@ -166,7 +166,7 @@ public class ExtraFieldTest {
       zos.write(new byte[] {1, 2, 3});
     }
 
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry foo = zf.get("foo");
       assertNotNull(foo);
       assertEquals(3, foo.getCentralDirectoryHeader().getUncompressedSize());
@@ -193,13 +193,13 @@ public class ExtraFieldTest {
 
   @Test
   public void addExtraFieldToExistingEntry() throws Exception {
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       zf.add("before", new ByteArrayInputStream(new byte[] {0, 1, 2}));
       zf.add("extra", new ByteArrayInputStream(new byte[] {3, 4, 5}));
       zf.add("after", new ByteArrayInputStream(new byte[] {6, 7, 8}));
     }
 
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry ex = zf.get("extra");
       assertNotNull(ex);
       extraFieldSetter.accept(
@@ -208,7 +208,7 @@ public class ExtraFieldTest {
               ImmutableList.of(new ExtraField.RawDataSegment(0x7654, new byte[] {1, 1, 3, 3}))));
     }
 
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry before = zf.get("before");
       assertNotNull(before);
       assertArrayEquals(new byte[] {0, 1, 2}, before.read());
@@ -233,13 +233,13 @@ public class ExtraFieldTest {
 
   @Test
   public void removeExtraFieldFromExistingEntry() throws Exception {
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       zf.add("before", new ByteArrayInputStream(new byte[] {0, 1, 2}));
       zf.add("extra", new ByteArrayInputStream(new byte[] {3, 4, 5}));
       zf.add("after", new ByteArrayInputStream(new byte[] {6, 7, 8}));
     }
 
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry ex = zf.get("extra");
       assertNotNull(ex);
       extraFieldSetter.accept(
@@ -248,13 +248,13 @@ public class ExtraFieldTest {
               ImmutableList.of(new ExtraField.RawDataSegment(0x7654, new byte[] {1, 1, 3, 3}))));
     }
 
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry ex = zf.get("extra");
       assertNotNull(ex);
       extraFieldSetter.accept(ex, new ExtraField());
     }
 
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry before = zf.get("before");
       assertNotNull(before);
       assertArrayEquals(new byte[] {0, 1, 2}, before.read());
@@ -274,13 +274,13 @@ public class ExtraFieldTest {
 
   @Test
   public void updateExtraFieldOfExistingEntry() throws Exception {
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       zf.add("before", new ByteArrayInputStream(new byte[] {0, 1, 2}));
       zf.add("extra", new ByteArrayInputStream(new byte[] {3, 4, 5}));
       zf.add("after", new ByteArrayInputStream(new byte[] {6, 7, 8}));
     }
 
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry ex = zf.get("extra");
       assertNotNull(ex);
       extraFieldSetter.accept(
@@ -289,7 +289,7 @@ public class ExtraFieldTest {
               ImmutableList.of(new ExtraField.RawDataSegment(0x7654, new byte[] {1, 1, 3, 3}))));
     }
 
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry ex = zf.get("extra");
       assertNotNull(ex);
       extraFieldSetter.accept(
@@ -298,7 +298,7 @@ public class ExtraFieldTest {
               ImmutableList.of(new ExtraField.RawDataSegment(0x7654, new byte[] {2, 4, 2, 4}))));
     }
 
-    try (ZFile zf = new ZFile(zipFile)) {
+    try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       StoredEntry before = zf.get("before");
       assertNotNull(before);
       assertArrayEquals(new byte[] {0, 1, 2}, before.read());
