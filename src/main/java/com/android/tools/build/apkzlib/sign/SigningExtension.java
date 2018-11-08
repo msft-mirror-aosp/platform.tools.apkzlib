@@ -120,7 +120,7 @@ public class SigningExtension {
     DefaultApkSignerEngine.SignerConfig signerConfig =
         new DefaultApkSignerEngine.SignerConfig.Builder(
                 "CERT", opts.getKey(), opts.getCertificates())
-                .build();
+            .build();
     signer =
         new DefaultApkSignerEngine.Builder(ImmutableList.of(signerConfig), opts.getMinSdkVersion())
             .setOtherSignersSignaturesPreserved(false)

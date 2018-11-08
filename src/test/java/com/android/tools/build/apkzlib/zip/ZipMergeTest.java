@@ -49,8 +49,8 @@ public class ZipMergeTest {
 
     CachedFileContents<Object> changeDetector;
     File merged = new File(temporaryFolder.getRoot(), "r.zip");
-    try (ZFile mergedZf = new ZFile(merged)) {
-      mergedZf.mergeFrom(new ZFile(aZip), f -> false);
+    try (ZFile mergedZf = ZFile.openReadWrite(merged)) {
+      mergedZf.mergeFrom(ZFile.openReadWrite(aZip), f -> false);
       mergedZf.close();
 
       assertEquals(3, mergedZf.entries().size());
@@ -85,7 +85,7 @@ public class ZipMergeTest {
        */
       File bZip = ZipTestUtils.cloneRsrc("simple-zip.zip", temporaryFolder, "b.zip");
 
-      mergedZf.mergeFrom(new ZFile(bZip), f -> false);
+      mergedZf.mergeFrom(ZFile.openReadWrite(bZip), f -> false);
     }
 
     assertTrue(changeDetector.isValid());
@@ -103,7 +103,7 @@ public class ZipMergeTest {
     }
 
     try (Closer closer = Closer.create()) {
-      ZFile fooZf = closer.register(new ZFile(foo));
+      ZFile fooZf = closer.register(ZFile.openReadWrite(foo));
       StoredEntry wStored = fooZf.get("w");
       assertNotNull(wStored);
       assertTrue(wStored.getCentralDirectoryHeader().getGpBit().isDeferredCrc());
@@ -111,7 +111,8 @@ public class ZipMergeTest {
           CompressionMethod.DEFLATE,
           wStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
 
-      ZFile merged = closer.register(new ZFile(new File(temporaryFolder.getRoot(), "bar")));
+      ZFile merged =
+          closer.register(ZFile.openReadWrite(new File(temporaryFolder.getRoot(), "bar")));
       merged.mergeFrom(fooZf, f -> false);
       merged.update();
 
@@ -143,7 +144,7 @@ public class ZipMergeTest {
     }
 
     try (Closer closer = Closer.create()) {
-      ZFile fooZf = closer.register(new ZFile(foo));
+      ZFile fooZf = closer.register(ZFile.openReadWrite(foo));
       StoredEntry wStored = fooZf.get("w");
       assertNotNull(wStored);
       assertEquals(
@@ -155,7 +156,8 @@ public class ZipMergeTest {
           CompressionMethod.STORE,
           lStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
 
-      ZFile merged = closer.register(new ZFile(new File(temporaryFolder.getRoot(), "bar")));
+      ZFile merged =
+          closer.register(ZFile.openReadWrite(new File(temporaryFolder.getRoot(), "bar")));
       merged.mergeFrom(fooZf, f -> false);
       merged.update();
 
@@ -194,8 +196,8 @@ public class ZipMergeTest {
       fooOut.write(lBytes);
     }
 
-    try (ZFile fooZf = new ZFile(foo);
-        ZFile merged = new ZFile(new File(temporaryFolder.getRoot(), "bar"))) {
+    try (ZFile fooZf = ZFile.openReadWrite(foo);
+        ZFile merged = ZFile.openReadWrite(new File(temporaryFolder.getRoot(), "bar"))) {
       merged.mergeFrom(fooZf, f -> false);
       merged.sortZipContents();
       merged.update();

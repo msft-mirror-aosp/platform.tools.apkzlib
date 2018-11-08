@@ -58,6 +58,7 @@ public class ZFiles {
     options.setAlignmentRule(AlignmentRules.compose(options.getAlignmentRule(), APK_DEFAULT_RULE));
     return ZFile.openReadWrite(f, options);
   }
+
   /**
    * Creates a new zip file configured as an apk, based on a given file.
    *
@@ -80,26 +81,26 @@ public class ZFiles {
    */
   @Deprecated
   public static ZFile apk(
-          File f,
-          ZFileOptions options,
-          @Nullable PrivateKey key,
-          @Nullable X509Certificate certificate,
-          boolean v1SigningEnabled,
-          boolean v2SigningEnabled,
-          @Nullable String builtBy,
-          @Nullable String createdBy,
-          int minSdkVersion)
-          throws IOException {
+      File f,
+      ZFileOptions options,
+      @Nullable PrivateKey key,
+      @Nullable X509Certificate certificate,
+      boolean v1SigningEnabled,
+      boolean v2SigningEnabled,
+      @Nullable String builtBy,
+      @Nullable String createdBy,
+      int minSdkVersion)
+      throws IOException {
     return apk(
-            f,
-            options,
-            key,
-            certificate == null ? ImmutableList.of() : ImmutableList.of(certificate),
-            v1SigningEnabled,
-            v2SigningEnabled,
-            builtBy,
-            createdBy,
-            minSdkVersion);
+        f,
+        options,
+        key,
+        certificate == null ? ImmutableList.of() : ImmutableList.of(certificate),
+        v1SigningEnabled,
+        v2SigningEnabled,
+        builtBy,
+        createdBy,
+        minSdkVersion);
   }
 
   /**
@@ -125,22 +126,22 @@ public class ZFiles {
    */
   @Deprecated
   public static ZFile apk(
-          File f,
-          ZFileOptions options,
-          @Nullable PrivateKey key,
-          ImmutableList<X509Certificate> certificates,
-          boolean v1SigningEnabled,
-          boolean v2SigningEnabled,
-          @Nullable String builtBy,
-          @Nullable String createdBy,
-          int minSdkVersion)
-          throws IOException {
+      File f,
+      ZFileOptions options,
+      @Nullable PrivateKey key,
+      ImmutableList<X509Certificate> certificates,
+      boolean v1SigningEnabled,
+      boolean v2SigningEnabled,
+      @Nullable String builtBy,
+      @Nullable String createdBy,
+      int minSdkVersion)
+      throws IOException {
     SigningOptions signingOptions = new SigningOptions(
-            key,
-            certificates,
-            v1SigningEnabled,
-            v2SigningEnabled,
-            minSdkVersion);
+        key,
+        certificates,
+        v1SigningEnabled,
+        v2SigningEnabled,
+        minSdkVersion);
     return apk(f, options, signingOptions, builtBy, createdBy);
   }
 

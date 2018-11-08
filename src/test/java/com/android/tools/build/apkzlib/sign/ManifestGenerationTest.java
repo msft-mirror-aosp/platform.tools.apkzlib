@@ -47,7 +47,7 @@ public class ManifestGenerationTest {
   public void elementaryManifestGeneration() throws Exception {
     File zip = new File(temporaryFolder.getRoot(), "f.zip");
 
-    try (ZFile zf = new ZFile(zip)) {
+    try (ZFile zf = ZFile.openReadWrite(zip)) {
       zf.add("abc", new ByteArrayInputStream(new byte[] {1}));
       zf.add("x/", new ByteArrayInputStream(new byte[0]));
       zf.add("x/abc", new ByteArrayInputStream(new byte[] {2}));
@@ -82,7 +82,7 @@ public class ManifestGenerationTest {
   public void manifestGenerationOnHalfWrittenFile() throws Exception {
     File zip = new File(temporaryFolder.getRoot(), "f.zip");
     try (Closer closer = Closer.create()) {
-      ZFile zf = closer.register(new ZFile(zip));
+      ZFile zf = closer.register(ZFile.openReadWrite(zip));
 
       try (InputStream wiki = ApkZFileTestUtils.getResourceBytes(WIKI_PATH).openStream()) {
         zf.add("wiki", wiki);
@@ -118,7 +118,7 @@ public class ManifestGenerationTest {
   public void manifestGenerationOnExistingFile() throws Exception {
     File zip = new File(temporaryFolder.getRoot(), "f.zip");
     try (Closer closer = Closer.create()) {
-      ZFile zf = closer.register(new ZFile(zip));
+      ZFile zf = closer.register(ZFile.openReadWrite(zip));
 
       try (InputStream wiki = ApkZFileTestUtils.getResourceBytes(WIKI_PATH).openStream()) {
         zf.add("wiki", wiki);
@@ -156,7 +156,7 @@ public class ManifestGenerationTest {
   public void manifestGenerationOnIncrementalNoChanges() throws Exception {
     File zip = new File(temporaryFolder.getRoot(), "f.zip");
     try (Closer closer = Closer.create()) {
-      ZFile zf = closer.register(new ZFile(zip));
+      ZFile zf = closer.register(ZFile.openReadWrite(zip));
 
       ManifestGenerationExtension extension =
           new ManifestGenerationExtension("Me, of course", "Myself");
@@ -172,7 +172,7 @@ public class ManifestGenerationTest {
 
       ApkZFileTestUtils.waitForFileSystemTick(timeOfWriting);
 
-      zf = closer.register(new ZFile(zip));
+      zf = closer.register(ZFile.openReadWrite(zip));
       zf.close();
 
       long secondTimeOfWriting = zip.lastModified();

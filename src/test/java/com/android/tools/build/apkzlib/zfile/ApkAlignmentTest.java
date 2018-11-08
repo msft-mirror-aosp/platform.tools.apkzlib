@@ -40,7 +40,8 @@ import org.junit.runners.JUnit4;
 public class ApkAlignmentTest {
   @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-  private final SigningOptions signingOptions = new SigningOptions(null, (X509Certificate)null, false, false, 20);
+  private final SigningOptions signingOptions =
+      new SigningOptions(null, (X509Certificate) null, false, false, 20);
 
   @Test
   public void soFilesUncompressedAndAligned() throws Exception {
@@ -63,7 +64,7 @@ public class ApkAlignmentTest {
       creator.writeFile(soFile, "/doesnt_work.so");
     }
 
-    try (ZFile zf = new ZFile(apk)) {
+    try (ZFile zf = ZFile.openReadWrite(apk)) {
       StoredEntry soEntry = zf.get("/doesnt_work.so");
       assertNotNull(soEntry);
       assertEquals(
@@ -79,11 +80,11 @@ public class ApkAlignmentTest {
 
     // Create a zip file with a compressed, unaligned so file.
     File zipToMerge = new File(temporaryFolder.getRoot(), "a.zip");
-    try (ZFile zf = new ZFile(zipToMerge)) {
+    try (ZFile zf = ZFile.openReadWrite(zipToMerge)) {
       zf.add("/zero.so", new ByteArrayInputStream(new byte[500]));
     }
 
-    try (ZFile zf = new ZFile(zipToMerge)) {
+    try (ZFile zf = ZFile.openReadWrite(zipToMerge)) {
       StoredEntry zeroSo = zf.get("/zero.so");
       assertNotNull(zeroSo);
       assertEquals(
@@ -110,7 +111,7 @@ public class ApkAlignmentTest {
     }
 
     // Make sure the file is uncompressed and aligned.
-    try (ZFile zf = new ZFile(apk)) {
+    try (ZFile zf = ZFile.openReadWrite(apk)) {
       StoredEntry soEntry = zf.get("/zero.so");
       assertNotNull(soEntry);
       assertEquals(
@@ -148,7 +149,7 @@ public class ApkAlignmentTest {
       creator.writeFile(soFile, "/doesnt_work.so");
     }
 
-    try (ZFile zf = new ZFile(apk)) {
+    try (ZFile zf = ZFile.openReadWrite(apk)) {
       StoredEntry soEntry = zf.get("/doesnt_work.so");
       assertNotNull(soEntry);
       assertEquals(
@@ -164,11 +165,11 @@ public class ApkAlignmentTest {
 
     // Create a zip file with a compressed, unaligned so file.
     File zipToMerge = new File(temporaryFolder.getRoot(), "a.zip");
-    try (ZFile zf = new ZFile(zipToMerge)) {
+    try (ZFile zf = ZFile.openReadWrite(zipToMerge)) {
       zf.add("/zero.so", new ByteArrayInputStream(new byte[500]));
     }
 
-    try (ZFile zf = new ZFile(zipToMerge)) {
+    try (ZFile zf = ZFile.openReadWrite(zipToMerge)) {
       StoredEntry zeroSo = zf.get("/zero.so");
       assertNotNull(zeroSo);
       assertEquals(
@@ -195,7 +196,7 @@ public class ApkAlignmentTest {
     }
 
     // Make sure the file is uncompressed and aligned.
-    try (ZFile zf = new ZFile(apk)) {
+    try (ZFile zf = ZFile.openReadWrite(apk)) {
       StoredEntry soEntry = zf.get("/zero.so");
       assertNotNull(soEntry);
       assertEquals(

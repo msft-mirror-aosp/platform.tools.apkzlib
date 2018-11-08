@@ -287,7 +287,7 @@ public class StoredEntry {
    * @throws IOException failed to read the file
    */
   public byte[] read() throws IOException {
-    try (InputStream is = open()) {
+    try (InputStream is = new BufferedInputStream(open())) {
       return ByteStreams.toByteArray(is);
     }
   }
@@ -640,8 +640,8 @@ public class StoredEntry {
 
   /**
    * Obtains the local header data.
-   * @param buffer a buffer to write header data to
    *
+   * @param buffer a buffer to write header data to
    * @return the header data size
    * @throws IOException failed to get header byte data
    */
