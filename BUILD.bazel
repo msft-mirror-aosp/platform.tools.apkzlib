@@ -44,6 +44,7 @@ java_library(
 
 java_test(
     name = "apkzlib_tests",
+    size = "large",
     jvm_flags = ["-Dtest.suite.jar=apkzlib_tests_lib.jar"],
     test_class = "com.android.testutils.JarTestSuite",
     runtime_deps = [
