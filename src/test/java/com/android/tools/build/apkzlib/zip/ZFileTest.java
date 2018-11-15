@@ -1870,6 +1870,29 @@ public class ZFileTest {
     assertThat(myZip.lastModified()).isEqualTo(timestamp);
   }
 
+  @Test
+  public void storeMoreThan20MBEntries() throws Exception {
+    final int MORE_THAN_20MB = 21*1024*1024;
+    InputStream stream = new ByteArrayInputStream(new byte[MORE_THAN_20MB]);
+
+    File zipA = new File(temporaryFolder.getRoot(), "a.zip");
+    try (ZFile zf = ZFile.openReadWrite(zipA)) {
+      zf.add("foo", stream, false);
+    }
+
+    File zipB = new File(temporaryFolder.getRoot(), "b.zip");
+    try (ZFile zfA = ZFile.openReadOnly(zipA);
+         ZFile zfB = ZFile.openReadWrite(zipB)) {
+      zfB.mergeFrom(zfA, s -> false);
+
+      StoredEntry fooEntryA = zfA.get("foo");
+      StoredEntry fooEntryB = zfB.get("foo");
+
+      assertThat(fooEntryA.read()).hasLength(MORE_THAN_20MB);
+      assertThat(fooEntryB.read()).hasLength(MORE_THAN_20MB);
+    }
+  }
+
   private static class DelegateByteStorage implements ByteStorage {
     private final ByteStorage delegate;
 
