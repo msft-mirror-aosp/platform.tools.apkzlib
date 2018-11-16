@@ -24,10 +24,10 @@ class ChunkBasedCloseableByteSource extends CloseableDelegateByteSource {
   }
 
   /** Computes the size of this source by summing the sizes of all sources. */
-  private static long sumSizes(List<CloseableByteSource> sources) throws IOException {
-    long sum = 0;
+  private static int sumSizes(List<CloseableByteSource> sources) throws IOException {
+    int sum = 0;
     for (CloseableByteSource source : sources) {
-      sum += source.size();
+      sum = (int) (sum + source.size());
     }
 
     return sum;

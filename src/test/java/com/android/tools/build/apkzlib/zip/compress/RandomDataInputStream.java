@@ -21,11 +21,10 @@ import java.io.InputStream;
 import java.util.Random;
 
 /**
- * A helper class simulating a stream of random data Can be used to simulate large incompressible
- * data stream (file) in tests
+ * A helper class simulating a stream of random data
+ * Can be used to simulate large incompressible data stream (file) in tests
  */
-@SuppressWarnings("InputStreamSlowMultibyteRead")
-public class RandomDataInputStream extends InputStream {
+class RandomDataInputStream extends InputStream {
     private static final int BUFF_SIZE = 8096;
     private final Random rand;
     private final long size;
