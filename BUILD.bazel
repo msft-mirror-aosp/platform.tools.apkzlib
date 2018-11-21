@@ -7,10 +7,14 @@ maven_java_library(
     srcs = glob([
         "src/main/java/**/*.java",
     ]),
+    plugins = [
+        ":auto-value-plugin",
+    ],
     pom = ":pom",
     resource_strip_prefix = "tools/apkzlib",
     visibility = ["//tools/base/build-system:__subpackages__"],
     deps = [
+        ":com.google.auto.value_auto-value_neverlink",
         "//tools/base/build-system:tools.apksig",
         "//tools/base/third_party:com.google.code.findbugs_jsr305",
         "//tools/base/third_party:com.google.guava_guava",
@@ -52,4 +56,19 @@ java_test(
         "//tools/base/testutils:tools.testutils",
         "//tools/base/third_party:junit_junit",
     ],
+)
+
+java_plugin(
+    name = "auto-value-plugin",
+    processor_class = "com.google.auto.value.processor.AutoValueProcessor",
+    deps = [
+        "//tools/base/third_party:com.google.auto.value_auto-value",
+    ],
+)
+
+# Compile-time only dependency on the auto-value.
+java_library(
+    name = "com.google.auto.value_auto-value_neverlink",
+    neverlink = 1,
+    exports = ["//tools/base/third_party:com.google.auto.value_auto-value"],
 )
