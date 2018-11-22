@@ -27,6 +27,8 @@ import com.android.tools.build.apkzlib.zip.StoredEntry;
 import com.android.tools.build.apkzlib.zip.ZFile;
 import com.android.tools.build.apkzlib.zip.ZFileExtension;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -115,6 +117,10 @@ public class SigningExtension {
 
   /** The file this extension is attached to. {@code null} if not yet registered. */
   @Nullable private ZFile zFile;
+
+  /** A buffer used to read data from entries to feed to digests */
+  private final Supplier<byte[]> digestBuffer =
+      Suppliers.memoize(() -> new byte[MAX_READ_CHUNK_SIZE]);
 
   public SigningExtension(SigningOptions opts) throws InvalidKeyException {
     DefaultApkSignerEngine.SignerConfig signerConfig =
@@ -240,10 +246,10 @@ public class SigningExtension {
     }
   }
 
-  private static void copyStreamToDataSink(InputStream inputStream, DataSink dataSink)
-      throws IOException {
-    byte[] buffer = new byte[MAX_READ_CHUNK_SIZE];
+  private void copyStreamToDataSink(InputStream inputStream, DataSink dataSink)
+          throws IOException {
     int bytesRead;
+    byte[] buffer = digestBuffer.get();
     while ((bytesRead = inputStream.read(buffer)) > 0) {
       dataSink.consume(buffer, 0, bytesRead);
     }
