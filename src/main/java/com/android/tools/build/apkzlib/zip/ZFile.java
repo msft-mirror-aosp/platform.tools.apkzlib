@@ -444,12 +444,14 @@ public class ZFile implements Closeable {
 
     try {
       if (state != ZipFileState.CLOSED) {
+        // TODO: to be removed completely once Zip64 is fully supported
+        final long MAX_ENTRY_SIZE = 0xFFFFFFFFL; // 2^32-1
         long rafSize = raf.length();
-        if (rafSize > Integer.MAX_VALUE) {
-          throw new IOException("File exceeds size limit of " + Integer.MAX_VALUE + ".");
+        if (rafSize > MAX_ENTRY_SIZE) {
+          throw new IOException("File exceeds size limit of " + MAX_ENTRY_SIZE + ".");
         }
 
-        map.extend(Ints.checkedCast(rafSize));
+        map.extend(raf.length());
         readData();
       }
 
@@ -740,7 +742,7 @@ public class ZFile implements Closeable {
     Eocd eocd = null;
     int foundEocdSignature = -1;
     IOException errorFindingSignature = null;
-    int eocdStart = -1;
+    long eocdStart = -1;
 
     for (int endIdx = last.length - MIN_EOCD_SIZE;
         endIdx >= 0 && foundEocdSignature == -1;
@@ -763,7 +765,7 @@ public class ZFile implements Closeable {
 
         try {
           eocd = new Eocd(eocdBytes);
-          eocdStart = Ints.checkedCast(raf.length() - lastToRead + foundEocdSignature);
+          eocdStart = raf.length() - lastToRead + foundEocdSignature;
 
           /*
            * Make sure the EOCD takes the whole file up to the end. Log an error if it
@@ -803,7 +805,7 @@ public class ZFile implements Closeable {
      * Look for the Zip64 central directory locator. If we find it, then this file is a Zip64
      * file and we do not support it.
      */
-    int zip64LocatorStart = eocdStart - ZIP64_EOCD_LOCATOR_SIZE;
+    long zip64LocatorStart = eocdStart - ZIP64_EOCD_LOCATOR_SIZE;
     if (zip64LocatorStart >= 0) {
       byte[] possibleZip64Locator = new byte[4];
       directFullyRead(zip64LocatorStart, possibleZip64Locator);
