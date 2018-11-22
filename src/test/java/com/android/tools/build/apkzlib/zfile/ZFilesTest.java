@@ -45,7 +45,7 @@ public class ZFilesTest {
     ApkZLibPair<PrivateKey, X509Certificate> signingData =
         SignatureTestUtils.generateSignaturePos18();
     SigningOptions signingOptions =
-        new SigningOptions(
+        SigningOptions.create(
             signingData.v1, signingData.v2, /* v1= */ true, /* v2= */ true, /* minSdk= */ 18);
 
     try (ZFile zf =

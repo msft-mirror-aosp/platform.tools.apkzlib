@@ -125,7 +125,7 @@ public class SigningExtension {
   public SigningExtension(SigningOptions opts) throws InvalidKeyException {
     DefaultApkSignerEngine.SignerConfig signerConfig =
         new DefaultApkSignerEngine.SignerConfig.Builder(
-                "CERT", opts.getKey(), opts.getCertificates())
+                "CERT", opts.getKey().orNull(), opts.getCertificates())
             .build();
     signer =
         new DefaultApkSignerEngine.Builder(ImmutableList.of(signerConfig), opts.getMinSdkVersion())

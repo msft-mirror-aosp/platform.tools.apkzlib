@@ -16,6 +16,8 @@
 
 package com.android.tools.build.apkzlib.sign;
 
+import com.google.auto.value.AutoValue;
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.security.PrivateKey;
@@ -23,82 +25,67 @@ import java.security.cert.X509Certificate;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-/** A class that contains data to initialize SigningExtension */
-public class SigningOptions {
-  /** Key used to sign the APK. */
-  @Nullable
-  private final PrivateKey key;
+/**
+ * A class that contains data to initialize SigningExtension
+ */
+@AutoValue
+public abstract class SigningOptions {
 
-  /**
-   * Certificates used to sign the APK. Is {@code isEmpty()} if and only if {@link #key} is {@code
-   * null}.
-   */
-  @Nonnull
-  private final ImmutableList<X509Certificate> certs;
+    /**
+     * Static method to create {@link SigningOptions} object
+     *
+     * @param key the {@link PrivateKey} used to sign the archive, or {@code null}.
+     * @param cert the {@link X509Certificate} associated with the private key, or {@code null}.
+     * @param v1 whether signing with JAR Signature Scheme (aka v1 signing) is enabled.
+     * @param v2 whether signing with APK Signature Scheme v2 (aka v2 signing) is
+     *     enabled.
+     * @param minSdk minimum SDK version supported
+     *
+     * Returns a new instance of {@link SigningOptions}
+     */
+    public static SigningOptions create(
+            @Nullable PrivateKey key,
+            @Nullable X509Certificate cert,
+            boolean v1,
+            boolean v2,
+            int minSdk) {
+        return create(
+                key, cert == null ? ImmutableList.of() : ImmutableList.of(cert), v1, v2, minSdk);
+    }
 
-  /** Whether signing the APK with JAR Signing Scheme (aka v1 signing) is enabled. */
-  private final boolean v1SigningEnabled;
+    /**
+     * Static method to create {@link SigningOptions} object
+     *
+     * @param key the {@link PrivateKey} used to sign the archive, or {@code null}.
+     * @param certs list of the {@link X509Certificate}s to embed in the signed APKs. The first
+     *     element of the list must be the certificate associated with the private key.
+     * @param v1 whether signing with JAR Signature Scheme (aka v1 signing) is enabled.
+     * @param v2 whether signing with APK Signature Scheme v2 (aka v2 signing) is
+     *     enabled.
+     * @param minSdk minimum SDK version supported
+     *
+     * Returns a new instance of {@link SigningOptions}
+     */
+    public static SigningOptions create(
+            @Nullable PrivateKey key,
+            @Nonnull ImmutableList<X509Certificate> certs,
+            boolean v1,
+            boolean v2,
+            int minSdk) {
+        Preconditions.checkArgument(
+                (key == null) == certs.isEmpty(),
+                "Certificates list should be empty if and only if the private key is null");
+        Preconditions.checkArgument(minSdk >= 0, "minSdkVersion < 0");
+        return new AutoValue_SigningOptions(Optional.fromNullable(key), certs, v1, v2, minSdk);
+    }
 
-  /** Whether signing the APK with APK Signature Scheme v2 (aka v2 signing) is enabled. */
-  private final boolean v2SigningEnabled;
+    public abstract Optional<PrivateKey> getKey();
 
-  /** Minimum SDk version that will run the APK. */
-  private final int minSdkVersion;
+    public abstract ImmutableList<X509Certificate> getCertificates();
 
-  public SigningOptions(
-      @Nullable PrivateKey key,
-      @Nullable X509Certificate cert,
-      boolean v1,
-      boolean v2,
-      int minSdk) {
-    this(key, cert == null ? ImmutableList.of() : ImmutableList.of(cert), v1, v2, minSdk);
-  }
+    public abstract boolean isV1SigningEnabled();
 
-  /**
-   * @param key the {@link PrivateKey} used to sign the archive, or {@code null}.
-   * @param certs list of the {@link X509Certificate}s to embed in the signed APKs. The first
-   *     element of the list must be the certificate associated with the private key.
-   * @param v1SigningEnabled whether signing with JAR Signature Scheme (aka v1 signing) is enabled.
-   * @param v2SigningEnabled whether signing with APK Signature Scheme v2 (aka v2 signing) is
-   *     enabled.
-   * @param minSdkVersion minimum SDK version supported
-   */
-  public SigningOptions(
-      @Nullable PrivateKey key,
-      @Nonnull ImmutableList<X509Certificate> certs,
-      boolean v1SigningEnabled,
-      boolean v2SigningEnabled,
-      int minSdkVersion) {
-    Preconditions.checkArgument(
-        (key == null) == certs.isEmpty(),
-        "Certificates list should be empty if and only if the private key is null");
-    Preconditions.checkArgument(minSdkVersion >= 0, "minSdkVersion < 0");
-    this.key = key;
-    this.certs = certs;
-    this.v1SigningEnabled = v1SigningEnabled;
-    this.v2SigningEnabled = v2SigningEnabled;
-    this.minSdkVersion = minSdkVersion;
-  }
+    public abstract boolean isV2SigningEnabled();
 
-  @Nullable
-  public PrivateKey getKey() {
-    return key;
-  }
-
-  @Nonnull
-  public ImmutableList<X509Certificate> getCertificates() {
-    return certs;
-  }
-
-  public boolean isV1SigningEnabled() {
-    return v1SigningEnabled;
-  }
-
-  public boolean isV2SigningEnabled() {
-    return v2SigningEnabled;
-  }
-
-  public int getMinSdkVersion() {
-    return minSdkVersion;
-  }
+    public abstract int getMinSdkVersion();
 }

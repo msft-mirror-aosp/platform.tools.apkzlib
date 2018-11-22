@@ -73,7 +73,8 @@ public class FullApkSignTest {
     /*
      * Generate a signed zip.
      */
-    SigningOptions signingOptions = new SigningOptions(signData.v1, signData.v2, false, true, 13);
+    SigningOptions signingOptions =
+        SigningOptions.create(signData.v1, signData.v2, false, true, 13);
     try (ZFile zf = ZFile.openReadWrite(file, options)) {
       new SigningExtension(signingOptions).register(zf);
       zf.add(F1_NAME, new ByteArrayInputStream(F1_DATA));
@@ -139,7 +140,7 @@ public class FullApkSignTest {
 
     /* Resign the zip. */
     SigningOptions signingOptions =
-        new SigningOptions(newSigningData.v1, newSigningData.v2, false, true, 13);
+        SigningOptions.create(newSigningData.v1, newSigningData.v2, false, true, 13);
     try (ZFile zf = ZFile.openReadWrite(out)) {
       new SigningExtension(signingOptions).register(zf);
     }

@@ -41,7 +41,7 @@ public class ApkAlignmentTest {
   @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   private final SigningOptions signingOptions =
-      new SigningOptions(null, (X509Certificate) null, false, false, 20);
+      SigningOptions.create(null, (X509Certificate) null, false, false, 20);
 
   @Test
   public void soFilesUncompressedAndAligned() throws Exception {
