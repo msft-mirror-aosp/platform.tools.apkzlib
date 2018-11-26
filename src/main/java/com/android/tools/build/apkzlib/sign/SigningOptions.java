@@ -17,13 +17,11 @@
 package com.android.tools.build.apkzlib.sign;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * A class that contains data to initialize SigningExtension
@@ -44,19 +42,19 @@ public abstract class SigningOptions {
      * Returns a new instance of {@link SigningOptions}
      */
     public static SigningOptions create(
-            @Nullable PrivateKey key,
-            @Nullable X509Certificate cert,
+            @Nonnull PrivateKey key,
+            @Nonnull X509Certificate cert,
             boolean v1,
             boolean v2,
             int minSdk) {
         return create(
-                key, cert == null ? ImmutableList.of() : ImmutableList.of(cert), v1, v2, minSdk);
+                key, ImmutableList.of(cert), v1, v2, minSdk);
     }
 
     /**
      * Static method to create {@link SigningOptions} object
      *
-     * @param key the {@link PrivateKey} used to sign the archive, or {@code null}.
+     * @param key the {@link PrivateKey} used to sign the archive.
      * @param certs list of the {@link X509Certificate}s to embed in the signed APKs. The first
      *     element of the list must be the certificate associated with the private key.
      * @param v1 whether signing with JAR Signature Scheme (aka v1 signing) is enabled.
@@ -67,19 +65,18 @@ public abstract class SigningOptions {
      * Returns a new instance of {@link SigningOptions}
      */
     public static SigningOptions create(
-            @Nullable PrivateKey key,
+            @Nonnull PrivateKey key,
             @Nonnull ImmutableList<X509Certificate> certs,
             boolean v1,
             boolean v2,
             int minSdk) {
-        Preconditions.checkArgument(
-                (key == null) == certs.isEmpty(),
-                "Certificates list should be empty if and only if the private key is null");
         Preconditions.checkArgument(minSdk >= 0, "minSdkVersion < 0");
-        return new AutoValue_SigningOptions(Optional.fromNullable(key), certs, v1, v2, minSdk);
+        Preconditions.checkArgument(
+                !certs.isEmpty(), "There should be at least one certificate in SigningOptions");
+        return new AutoValue_SigningOptions(key, certs, v1, v2, minSdk);
     }
 
-    public abstract Optional<PrivateKey> getKey();
+    public abstract PrivateKey getKey();
 
     public abstract ImmutableList<X509Certificate> getCertificates();
 

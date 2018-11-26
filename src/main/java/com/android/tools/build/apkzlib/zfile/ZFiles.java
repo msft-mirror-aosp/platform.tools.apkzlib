@@ -26,6 +26,7 @@ import com.android.tools.build.apkzlib.zip.ZFileOptions;
 import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -136,8 +137,13 @@ public class ZFiles {
       @Nullable String createdBy,
       int minSdkVersion)
       throws IOException {
-    SigningOptions signingOptions = SigningOptions.create(
-        key, certificates, v1SigningEnabled, v2SigningEnabled, minSdkVersion);
+    Optional<SigningOptions> signingOptions =
+            key == null ?
+            Optional.empty() :
+            Optional.of(
+                    SigningOptions.create(
+                            key, certificates, v1SigningEnabled, v2SigningEnabled, minSdkVersion));
+
     return apk(f, options, signingOptions, builtBy, createdBy);
   }
 
@@ -157,7 +163,7 @@ public class ZFiles {
   public static ZFile apk(
       File f,
       ZFileOptions options,
-      SigningOptions signingOptions,
+      Optional<SigningOptions> signingOptions,
       @Nullable String builtBy,
       @Nullable String createdBy)
       throws IOException {
@@ -174,9 +180,9 @@ public class ZFiles {
     ManifestGenerationExtension manifestExt = new ManifestGenerationExtension(builtBy, createdBy);
     manifestExt.register(zfile);
 
-    if (signingOptions.getKey().isPresent()) {
+    if (signingOptions.isPresent()) {
       try {
-        new SigningExtension(signingOptions).register(zfile);
+        new SigningExtension(signingOptions.get()).register(zfile);
       } catch (NoSuchAlgorithmException | InvalidKeyException e) {
         throw new IOException("Failed to create signature extensions", e);
       }
