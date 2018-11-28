@@ -621,7 +621,7 @@ public class ZFileTest {
   public void addFileRecursively() throws Exception {
     File tdir = temporaryFolder.newFolder();
     File tfile = new File(tdir, "blah-blah");
-    Files.write("blah", tfile, Charsets.US_ASCII);
+    Files.asCharSink(tfile, Charsets.US_ASCII).write("blah");
 
     File zip = new File(tdir, "f.zip");
     try (ZFile zf = ZFile.openReadWrite(zip)) {
@@ -641,8 +641,8 @@ public class ZFileTest {
     String boom = Strings.repeat("BOOM!", 100);
     String kaboom = Strings.repeat("KABOOM!", 100);
 
-    Files.write(boom, new File(tdir, "danger"), Charsets.US_ASCII);
-    Files.write(kaboom, new File(tdir, "do not touch"), Charsets.US_ASCII);
+    Files.asCharSink(new File(tdir, "danger"), Charsets.US_ASCII).write(boom);
+    Files.asCharSink(new File(tdir, "do not touch"), Charsets.US_ASCII).write(kaboom);
     File safeDir = new File(tdir, "safe");
     assertTrue(safeDir.mkdir());
 
@@ -659,9 +659,9 @@ public class ZFileTest {
             + "Quisque tristique ac velit sed auctor. Nulla lacus diam, tristique id sem non, "
             + "pellentesque commodo mauris.";
 
-    Files.write(iLoveChocolate, new File(safeDir, "eat.sweet"), Charsets.US_ASCII);
-    Files.write(iLoveOrange, new File(safeDir, "eat.fruit"), Charsets.US_ASCII);
-    Files.write(loremIpsum, new File(safeDir, "bedtime.reading.txt"), Charsets.US_ASCII);
+    Files.asCharSink(new File(safeDir, "eat.sweet"), Charsets.US_ASCII).write(iLoveChocolate);
+    Files.asCharSink(new File(safeDir, "eat.fruit"), Charsets.US_ASCII).write(iLoveOrange);
+    Files.asCharSink(new File(safeDir, "bedtime.reading.txt"), Charsets.US_ASCII).write(loremIpsum);
 
     File zip = new File(tdir, "f.zip");
     try (ZFile zf = ZFile.openReadWrite(zip)) {
