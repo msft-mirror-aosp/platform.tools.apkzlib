@@ -21,15 +21,39 @@ import com.google.common.base.Verify;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
- * Utilities to read and write 16 and 32 bit integers with support for little-endian encoding, as
- * used in zip files. Zip files actually use unsigned data types. We use Java's native (signed) data
- * types but will use long (64 bit) to ensure we can fit the whole range.
+ * Utilities to read and write 16, 32, and 64 bit integers with support for little-endian encoding,
+ * as used in zip files. Zip files actually use unsigned data types. We use Java's native (signed)
+ * data types but will use long (64 bit) to ensure we can fit the whole range for the 16 and 32
+ * bit fields.
  */
 public class LittleEndianUtils {
   /** Utility class, no constructor. */
   private LittleEndianUtils() {}
+
+  /**
+   * Reads 8 bytes in little-endian format and converts them into a 64-bit value.
+   *
+   * @param bytes from where should the bytes be read; the first 8 bytes of the source will be read.
+   * @return the 64-bit value
+   * @throws IOException failed to read the value.
+   */
+  public static long readUnsigned8Le(ByteBuffer bytes) throws IOException {
+    Preconditions.checkNotNull(bytes, "bytes == null");
+
+    if (bytes.remaining() < 8) {
+      throw new EOFException(
+              "Not enough data: 8 bytes expected, " + bytes.remaining() + " available.");
+    }
+
+    ByteOrder order = bytes.order();
+    bytes.order(ByteOrder.LITTLE_ENDIAN);
+    long r = bytes.getLong();
+    bytes.order(order);
+    return r;
+  }
 
   /**
    * Reads 4 bytes in little-endian format and converts them into a 32-bit value.
@@ -78,6 +102,22 @@ public class LittleEndianUtils {
     Verify.verify(r >= 0);
     Verify.verify(r <= 0x0000ffff);
     return r;
+  }
+
+  /**
+   * Writes 8 bytes in little-endian format, converting them from a <em> signed </em> 64-bit value.
+   *
+   * @param output the output stream where the bytes will be written.
+   * @param value the 64-bit value to convert.
+   * @throws IOException failed to write the value data.
+   */
+  public static void writeUnsigned8Le(ByteBuffer output, long value) throws IOException {
+    Preconditions.checkNotNull(output, "output == null");
+
+    ByteOrder order = output.order();
+    output.order(ByteOrder.LITTLE_ENDIAN);
+    output.putLong(value);
+    output.order(order);
   }
 
   /**
