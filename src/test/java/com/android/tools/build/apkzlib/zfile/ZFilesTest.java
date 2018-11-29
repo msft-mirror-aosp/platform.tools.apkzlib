@@ -16,9 +16,12 @@
 
 package com.android.tools.build.apkzlib.zfile;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import com.android.tools.build.apkzlib.sign.SignatureTestUtils;
 import com.android.tools.build.apkzlib.sign.SigningOptions;
 import com.android.tools.build.apkzlib.utils.ApkZLibPair;
+import com.android.tools.build.apkzlib.zip.StoredEntry;
 import com.android.tools.build.apkzlib.zip.ZFile;
 import com.android.tools.build.apkzlib.zip.ZFileOptions;
 import com.android.tools.build.apkzlib.zip.compress.RandomDataInputStream;
@@ -37,11 +40,12 @@ public class ZFilesTest {
 
   @Test
   public void testSigningVeryBigZipEntries() throws Exception {
+    final long FILE_SIZE = 2_200_000_000L;
     File zpath = new File(temporaryFolder.getRoot(), "a.zip");
     ApkZLibPair<PrivateKey, X509Certificate> signingData =
         SignatureTestUtils.generateSignaturePos18();
     SigningOptions signingOptions =
-        new SigningOptions(
+        SigningOptions.create(
             signingData.v1, signingData.v2, /* v1= */ true, /* v2= */ true, /* minSdk= */ 18);
 
     try (ZFile zf =
@@ -51,7 +55,12 @@ public class ZFilesTest {
             signingOptions,
             /* builtBy= */ null,
             /* createdBy= */ null)) {
-      zf.add("foo", new RandomDataInputStream(2_200_000_000L));
+      zf.add("foo", new RandomDataInputStream(FILE_SIZE));
+    }
+
+    try (ZFile zf = ZFile.openReadOnly(zpath)) {
+      StoredEntry e = zf.get("foo");
+      assertThat(e.getCentralDirectoryHeader().getUncompressedSize()).isEqualTo(FILE_SIZE);
     }
   }
 }

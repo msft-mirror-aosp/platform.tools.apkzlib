@@ -136,12 +136,8 @@ public class ZFiles {
       @Nullable String createdBy,
       int minSdkVersion)
       throws IOException {
-    SigningOptions signingOptions = new SigningOptions(
-        key,
-        certificates,
-        v1SigningEnabled,
-        v2SigningEnabled,
-        minSdkVersion);
+    SigningOptions signingOptions = SigningOptions.create(
+        key, certificates, v1SigningEnabled, v2SigningEnabled, minSdkVersion);
     return apk(f, options, signingOptions, builtBy, createdBy);
   }
 
@@ -178,7 +174,7 @@ public class ZFiles {
     ManifestGenerationExtension manifestExt = new ManifestGenerationExtension(builtBy, createdBy);
     manifestExt.register(zfile);
 
-    if (signingOptions.getKey() != null) {
+    if (signingOptions.getKey().isPresent()) {
       try {
         new SigningExtension(signingOptions).register(zfile);
       } catch (NoSuchAlgorithmException | InvalidKeyException e) {

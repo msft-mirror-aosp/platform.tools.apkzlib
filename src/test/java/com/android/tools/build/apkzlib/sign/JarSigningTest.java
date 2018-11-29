@@ -60,12 +60,12 @@ public class JarSigningTest {
 
   private static SigningOptions createSigningOptionsV1(
       ApkZLibPair<PrivateKey, X509Certificate> signingData, int minSdk) {
-    return new SigningOptions(signingData.v1, signingData.v2, true, false, minSdk);
+    return SigningOptions.create(signingData.v1, signingData.v2, true, false, minSdk);
   }
 
   private static SigningOptions createSigningOptionsV2(
       ApkZLibPair<PrivateKey, X509Certificate> signingData) {
-    return new SigningOptions(signingData.v1, signingData.v2, false, true, 12);
+    return SigningOptions.create(signingData.v1, signingData.v2, false, true, 12);
   }
 
   @Theory
