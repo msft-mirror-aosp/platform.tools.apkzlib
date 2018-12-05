@@ -36,6 +36,7 @@ public abstract class SigningOptions {
         public abstract Builder setV1SigningEnabled(boolean enabled);
         public abstract Builder setV2SigningEnabled(boolean enabled);
         public abstract Builder setMinSdkVersion(int version);
+        public abstract Builder setValidation(@Nonnull Validation validation);
 
         abstract SigningOptions autoBuild();
 
@@ -52,7 +53,8 @@ public abstract class SigningOptions {
     public static Builder builder() {
         return new AutoValue_SigningOptions.Builder()
                 .setV1SigningEnabled(false)
-                .setV2SigningEnabled(false);
+                .setV2SigningEnabled(false)
+                .setValidation(Validation.ALWAYS_VALIDATE);
     }
 
     /** {@link PrivateKey} used to sign the archive. */
@@ -72,4 +74,18 @@ public abstract class SigningOptions {
 
     /** Minimum SDK version supported. */
     public abstract int getMinSdkVersion();
+
+    /** Strategy of package signature validation */
+    public abstract Validation getValidation();
+
+    public enum Validation {
+        /** Always perform signature validation */
+        ALWAYS_VALIDATE,
+        /**
+         * Assume the signature is valid without validation i.e. don't resign if no files changed
+         */
+        ASSUME_VALID,
+        /** Assume the signature is invalid without validation i.e. unconditionally resign */
+        ASSUME_INVALID,
+    }
 }

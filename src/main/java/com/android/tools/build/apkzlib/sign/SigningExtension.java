@@ -77,22 +77,6 @@ public class SigningExtension {
   //   doesn't modify the APK unless a JAR entry is added to it or removed from it after
   //   "register".
 
-  /** Minimum API Level on which this APK is supposed to run. */
-  private final int minSdkVersion;
-
-  /** Whether JAR signing (aka v1 signing) is enabled. */
-  private final boolean v1SigningEnabled;
-
-  /** Whether APK Signature Scheme v2 sining (aka v2 signing) is enabled. */
-  private final boolean v2SigningEnabled;
-
-  /**
-   * List of certificates to embed in the APKs.
-   *
-   * <p>The first element of the list must be the certificate of the signer.
-   */
-  private final ImmutableList<X509Certificate> certificates;
-
   /** APK signer which performs most of the heavy lifting. */
   private final ApkSignerEngine signer;
 
@@ -122,6 +106,9 @@ public class SigningExtension {
   private final Supplier<byte[]> digestBuffer =
       Suppliers.memoize(() -> new byte[MAX_READ_CHUNK_SIZE]);
 
+  /** An object that has all necessary information to sign the zip file and verify its signature */
+  private final SigningOptions options;
+
   public SigningExtension(SigningOptions opts) throws InvalidKeyException {
     DefaultApkSignerEngine.SignerConfig signerConfig =
         new DefaultApkSignerEngine.SignerConfig.Builder(
@@ -134,16 +121,23 @@ public class SigningExtension {
             .setV2SigningEnabled(opts.isV2SigningEnabled())
             .setCreatedBy("1.0 (Android)")
             .build();
-    this.minSdkVersion = opts.getMinSdkVersion();
-    this.v1SigningEnabled = opts.isV1SigningEnabled();
-    this.v2SigningEnabled = opts.isV2SigningEnabled();
-    this.certificates = opts.getCertificates();
+    this.options = opts;
   }
 
   public void register(ZFile zFile) throws NoSuchAlgorithmException, IOException {
     Preconditions.checkState(extension == null, "register() already invoked");
     this.zFile = zFile;
-    dirty = !isCurrentSignatureAsRequested();
+    switch (options.getValidation()) {
+      case ALWAYS_VALIDATE:
+        dirty = !isCurrentSignatureAsRequested();
+        break;
+      case ASSUME_VALID:
+        dirty = false;
+        break;
+      case ASSUME_INVALID:
+        dirty = true;
+        break;
+    }
     extension =
         new ZFileExtension() {
           @Override
@@ -184,7 +178,7 @@ public class SigningExtension {
     try {
       result =
           new ApkVerifier.Builder(new ZFileDataSource(zFile))
-              .setMinCheckedPlatformVersion(minSdkVersion)
+              .setMinCheckedPlatformVersion(options.getMinSdkVersion())
               .build()
               .verify();
     } catch (ApkFormatException e) {
@@ -197,8 +191,8 @@ public class SigningExtension {
       return false;
     }
 
-    if ((result.isVerifiedUsingV1Scheme() != v1SigningEnabled)
-        || (result.isVerifiedUsingV2Scheme() != v2SigningEnabled)) {
+    if ((result.isVerifiedUsingV1Scheme() != options.isV1SigningEnabled())
+        || (result.isVerifiedUsingV2Scheme() != options.isV2SigningEnabled())) {
       // APK isn't signed with exactly the schemes we want it to be signed
       return false;
     }
@@ -212,7 +206,7 @@ public class SigningExtension {
     byte[] expectedEncodedCert;
     byte[] actualEncodedCert;
     try {
-      expectedEncodedCert = certificates.get(0).getEncoded();
+      expectedEncodedCert = options.getCertificates().get(0).getEncoded();
       actualEncodedCert = verifiedSignerCerts.get(0).getEncoded();
     } catch (CertificateEncodingException e) {
       // Failed to encode signing certificates
