@@ -29,6 +29,12 @@ public class CentralDirectoryHeaderCompressInfo {
   /** Version of zip file that only supports directories and deflated files. */
   public static final long VERSION_WITH_DIRECTORIES_AND_DEFLATE = 20L;
 
+  /** Version of zip file that only supports ZIP64 format extensions */
+  public static final long VERSION_WITH_ZIP64_EXTENSIONS = 45L;
+
+  /** Version of zip file that uses central file encryption and version 2 of the Zip64 EOCD */
+  public static final long VERSION_WITH_CENTRAL_FILE_ENCRYPTION = 62L;
+
   /** The compression method. */
   private final CompressionMethod method;
 
@@ -65,7 +71,7 @@ public class CentralDirectoryHeaderCompressInfo {
     this.method = method;
     this.compressedSize = compressedSize;
 
-    if (header.getName().endsWith("/") || method == CompressionMethod.DEFLATE) {
+   if (header.getName().endsWith("/") || method == CompressionMethod.DEFLATE) {
       /*
        * Directories and compressed files only in version 2.0.
        */
@@ -98,7 +104,7 @@ public class CentralDirectoryHeaderCompressInfo {
    *
    * @return the minimum version
    */
-  public long getVersionExtract() {
+  long getVersionExtract() {
     return versionExtract;
   }
 }
