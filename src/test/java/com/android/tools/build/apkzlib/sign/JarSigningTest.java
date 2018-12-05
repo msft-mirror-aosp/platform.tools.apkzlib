@@ -60,12 +60,22 @@ public class JarSigningTest {
 
   private static SigningOptions createSigningOptionsV1(
       ApkZLibPair<PrivateKey, X509Certificate> signingData, int minSdk) {
-    return SigningOptions.create(signingData.v1, signingData.v2, true, false, minSdk);
+    return SigningOptions.builder()
+            .setKey(signingData.v1)
+            .setCertificates(signingData.v2)
+            .setV1SigningEnabled(true)
+            .setMinSdkVersion(minSdk)
+            .build();
   }
 
   private static SigningOptions createSigningOptionsV2(
       ApkZLibPair<PrivateKey, X509Certificate> signingData) {
-    return SigningOptions.create(signingData.v1, signingData.v2, false, true, 12);
+    return SigningOptions.builder()
+            .setKey(signingData.v1)
+            .setCertificates(signingData.v2)
+            .setV2SigningEnabled(true)
+            .setMinSdkVersion(12)
+            .build();
   }
 
   @Theory

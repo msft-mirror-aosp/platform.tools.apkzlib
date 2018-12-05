@@ -141,8 +141,13 @@ public class ZFiles {
             key == null ?
             Optional.absent() :
             Optional.of(
-                    SigningOptions.create(
-                            key, certificates, v1SigningEnabled, v2SigningEnabled, minSdkVersion));
+                    SigningOptions.builder()
+                            .setKey(key)
+                            .setCertificates(certificates)
+                            .setV1SigningEnabled(v1SigningEnabled)
+                            .setV2SigningEnabled(v2SigningEnabled)
+                            .setMinSdkVersion(minSdkVersion)
+                            .build());
 
     return apk(f, options, signingOptions, builtBy, createdBy);
   }

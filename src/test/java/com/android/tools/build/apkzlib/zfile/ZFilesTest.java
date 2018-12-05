@@ -47,12 +47,13 @@ public class ZFilesTest {
         SignatureTestUtils.generateSignaturePos18();
     Optional<SigningOptions> signingOptions =
         Optional.of(
-            SigningOptions.create(
-                signingData.v1,
-                signingData.v2,
-                /* v1= */ true,
-                /* v2= */ true,
-                /* minSdk= */ 18));
+            SigningOptions.builder()
+                .setKey(signingData.v1)
+                .setCertificates(signingData.v2)
+                .setV1SigningEnabled(true)
+                .setV2SigningEnabled(true)
+                .setMinSdkVersion(18)
+                .build());
 
     try (ZFile zf =
         ZFiles.apk(
