@@ -25,10 +25,10 @@ import com.android.tools.build.apkzlib.zip.CompressionMethod;
 import com.android.tools.build.apkzlib.zip.StoredEntry;
 import com.android.tools.build.apkzlib.zip.ZFile;
 import com.android.tools.build.apkzlib.zip.ZFileOptions;
+import com.google.common.base.Optional;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.file.Files;
-import java.util.Optional;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -50,7 +50,7 @@ public class ApkAlignmentTest {
     ApkCreatorFactory.CreationData creationData =
         new ApkCreatorFactory.CreationData(
             apk,
-            Optional.empty(),
+            Optional.absent(),
             null,
             null,
             NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED,
@@ -96,7 +96,7 @@ public class ApkAlignmentTest {
     ApkCreatorFactory.CreationData creationData =
         new ApkCreatorFactory.CreationData(
             apk,
-            Optional.empty(),
+            Optional.absent(),
             null,
             null,
             NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED,
@@ -135,7 +135,7 @@ public class ApkAlignmentTest {
     ApkCreatorFactory.CreationData creationData =
         new ApkCreatorFactory.CreationData(
             apk,
-            Optional.empty(),
+            Optional.absent(),
             null,
             null,
             NativeLibrariesPackagingMode.COMPRESSED,
@@ -181,7 +181,7 @@ public class ApkAlignmentTest {
     ApkCreatorFactory.CreationData creationData =
         new ApkCreatorFactory.CreationData(
             apk,
-            Optional.empty(),
+            Optional.absent(),
             null,
             null,
             NativeLibrariesPackagingMode.COMPRESSED,

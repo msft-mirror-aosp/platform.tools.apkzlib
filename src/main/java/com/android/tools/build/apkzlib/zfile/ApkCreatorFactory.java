@@ -19,9 +19,9 @@ package com.android.tools.build.apkzlib.zfile;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.tools.build.apkzlib.sign.SigningOptions;
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import java.io.File;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 

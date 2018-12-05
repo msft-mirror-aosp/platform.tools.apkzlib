@@ -23,10 +23,10 @@ import com.android.tools.build.apkzlib.zip.AlignmentRule;
 import com.android.tools.build.apkzlib.zip.AlignmentRules;
 import com.android.tools.build.apkzlib.zip.ZFile;
 import com.android.tools.build.apkzlib.zip.ZFileOptions;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.IOException;
-import java.util.Optional;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -139,7 +139,7 @@ public class ZFiles {
       throws IOException {
     Optional<SigningOptions> signingOptions =
             key == null ?
-            Optional.empty() :
+            Optional.absent() :
             Optional.of(
                     SigningOptions.create(
                             key, certificates, v1SigningEnabled, v2SigningEnabled, minSdkVersion));
