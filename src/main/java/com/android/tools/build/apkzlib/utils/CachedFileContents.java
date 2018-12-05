@@ -143,7 +143,7 @@ public class CachedFileContents<T> {
   @Nullable
   private HashCode hashFile() {
     try {
-      return Files.hash(file, Hashing.crc32());
+      return Files.asByteSource(file).hash(Hashing.crc32());
     } catch (IOException e) {
       return null;
     }

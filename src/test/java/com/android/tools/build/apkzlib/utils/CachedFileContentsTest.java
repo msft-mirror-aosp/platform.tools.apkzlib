@@ -37,7 +37,7 @@ public class CachedFileContentsTest {
   @Test
   public void createFileAndCheckWithNoChanges() throws Exception {
     File f = temporaryFolder.newFile("test");
-    Files.write("abc", f, Charsets.US_ASCII);
+    Files.asCharSink(f, Charsets.US_ASCII).write("abc");
 
     Object cache = new Object();
 
@@ -51,14 +51,14 @@ public class CachedFileContentsTest {
   @Test
   public void createFileAndCheckChanges() throws Exception {
     File f = temporaryFolder.newFile("test");
-    Files.write("abc", f, Charsets.US_ASCII);
+    Files.asCharSink(f, Charsets.US_ASCII).write("abc");
 
     Object cache = new Object();
 
     CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
     cachedFile.closed(cache);
 
-    Files.write("def", f, Charsets.US_ASCII);
+    Files.asCharSink(f, Charsets.US_ASCII).write("def");
 
     assertFalse(cachedFile.isValid());
     assertNull(cachedFile.getCache());
@@ -67,14 +67,14 @@ public class CachedFileContentsTest {
   @Test
   public void createFileUpdateAndCheckChanges() throws Exception {
     File f = temporaryFolder.newFile("test");
-    Files.write("abc", f, Charsets.US_ASCII);
+    Files.asCharSink(f, Charsets.US_ASCII).write("abc");
 
     Object cache = new Object();
 
     CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
     cachedFile.closed(cache);
 
-    Files.write("def", f, Charsets.US_ASCII);
+    Files.asCharSink(f, Charsets.US_ASCII).write("def");
     cachedFile.closed(cache);
 
     assertTrue(cachedFile.isValid());
@@ -84,25 +84,25 @@ public class CachedFileContentsTest {
   @Test
   public void immediateChangesDetected() throws Exception {
     File f = temporaryFolder.newFile("foo");
-    Files.write("bar", f, Charsets.US_ASCII);
+    Files.asCharSink(f, Charsets.US_ASCII).write("bar");
 
     CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
     cachedFile.closed(null);
 
-    Files.write("xpto", f, Charsets.US_ASCII);
+    Files.asCharSink(f, Charsets.US_ASCII).write("xpto");
     assertFalse(cachedFile.isValid());
   }
 
   @Test
   public void immediateChangesDetectedEvenWithHackedTs() throws Exception {
     File f = temporaryFolder.newFile("foo");
-    Files.write("bar", f, Charsets.US_ASCII);
+    Files.asCharSink(f, Charsets.US_ASCII).write("bar");
 
     CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
     cachedFile.closed(null);
     long lastTs = f.lastModified();
 
-    Files.write("xpto", f, Charsets.US_ASCII);
+    Files.asCharSink(f, Charsets.US_ASCII).write("xpto");
     f.setLastModified(lastTs);
     assertFalse(cachedFile.isValid());
   }
@@ -110,13 +110,13 @@ public class CachedFileContentsTest {
   @Test
   public void immediateChangesWithNoContentChangeNotDetected() throws Exception {
     File f = temporaryFolder.newFile("foo");
-    Files.write("bar", f, Charsets.US_ASCII);
+    Files.asCharSink(f, Charsets.US_ASCII).write("bar");
 
     CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
     cachedFile.closed(null);
     long lastTs = f.lastModified();
 
-    Files.write("bar", f, Charsets.US_ASCII);
+    Files.asCharSink(f, Charsets.US_ASCII).write("bar");
     f.setLastModified(lastTs);
     assertTrue(cachedFile.isValid());
   }
