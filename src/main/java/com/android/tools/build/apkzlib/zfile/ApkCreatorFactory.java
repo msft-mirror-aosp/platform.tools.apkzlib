@@ -19,6 +19,7 @@ package com.android.tools.build.apkzlib.zfile;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.tools.build.apkzlib.sign.SigningOptions;
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import java.io.File;
 import javax.annotation.Nonnull;
@@ -47,7 +48,7 @@ public interface ApkCreatorFactory {
     private final File apkPath;
 
     /** Data used to sign the APK */
-    private final SigningOptions signingOptions;
+    private final Optional<SigningOptions> signingOptions;
 
     /** Built-by information for the APK, if any. */
     @Nullable private final String builtBy;
@@ -74,7 +75,7 @@ public interface ApkCreatorFactory {
      */
     public CreationData(
         File apkPath,
-        @Nonnull SigningOptions signingOptions,
+        @Nonnull Optional<SigningOptions> signingOptions,
         @Nullable String builtBy,
         @Nullable String createdBy,
         NativeLibrariesPackagingMode nativeLibrariesPackagingMode,
@@ -103,7 +104,7 @@ public interface ApkCreatorFactory {
      * @return the SigningOptions
      */
     @Nonnull
-    public SigningOptions getSigningOptions() {
+    public Optional<SigningOptions> getSigningOptions() {
       return signingOptions;
     }
 

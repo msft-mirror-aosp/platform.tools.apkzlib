@@ -25,6 +25,7 @@ import com.android.tools.build.apkzlib.zip.StoredEntry;
 import com.android.tools.build.apkzlib.zip.ZFile;
 import com.android.tools.build.apkzlib.zip.ZFileOptions;
 import com.android.tools.build.apkzlib.zip.compress.RandomDataInputStream;
+import com.google.common.base.Optional;
 import java.io.File;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -44,9 +45,15 @@ public class ZFilesTest {
     File zpath = new File(temporaryFolder.getRoot(), "a.zip");
     ApkZLibPair<PrivateKey, X509Certificate> signingData =
         SignatureTestUtils.generateSignaturePos18();
-    SigningOptions signingOptions =
-        SigningOptions.create(
-            signingData.v1, signingData.v2, /* v1= */ true, /* v2= */ true, /* minSdk= */ 18);
+    Optional<SigningOptions> signingOptions =
+        Optional.of(
+            SigningOptions.builder()
+                .setKey(signingData.v1)
+                .setCertificates(signingData.v2)
+                .setV1SigningEnabled(true)
+                .setV2SigningEnabled(true)
+                .setMinSdkVersion(18)
+                .build());
 
     try (ZFile zf =
         ZFiles.apk(

@@ -23,6 +23,7 @@ import com.android.tools.build.apkzlib.zip.AlignmentRule;
 import com.android.tools.build.apkzlib.zip.AlignmentRules;
 import com.android.tools.build.apkzlib.zip.ZFile;
 import com.android.tools.build.apkzlib.zip.ZFileOptions;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.IOException;
@@ -136,8 +137,18 @@ public class ZFiles {
       @Nullable String createdBy,
       int minSdkVersion)
       throws IOException {
-    SigningOptions signingOptions = SigningOptions.create(
-        key, certificates, v1SigningEnabled, v2SigningEnabled, minSdkVersion);
+    Optional<SigningOptions> signingOptions =
+            key == null ?
+            Optional.absent() :
+            Optional.of(
+                    SigningOptions.builder()
+                            .setKey(key)
+                            .setCertificates(certificates)
+                            .setV1SigningEnabled(v1SigningEnabled)
+                            .setV2SigningEnabled(v2SigningEnabled)
+                            .setMinSdkVersion(minSdkVersion)
+                            .build());
+
     return apk(f, options, signingOptions, builtBy, createdBy);
   }
 
@@ -157,7 +168,7 @@ public class ZFiles {
   public static ZFile apk(
       File f,
       ZFileOptions options,
-      SigningOptions signingOptions,
+      Optional<SigningOptions> signingOptions,
       @Nullable String builtBy,
       @Nullable String createdBy)
       throws IOException {
@@ -174,9 +185,9 @@ public class ZFiles {
     ManifestGenerationExtension manifestExt = new ManifestGenerationExtension(builtBy, createdBy);
     manifestExt.register(zfile);
 
-    if (signingOptions.getKey().isPresent()) {
+    if (signingOptions.isPresent()) {
       try {
-        new SigningExtension(signingOptions).register(zfile);
+        new SigningExtension(signingOptions.get()).register(zfile);
       } catch (NoSuchAlgorithmException | InvalidKeyException e) {
         throw new IOException("Failed to create signature extensions", e);
       }
