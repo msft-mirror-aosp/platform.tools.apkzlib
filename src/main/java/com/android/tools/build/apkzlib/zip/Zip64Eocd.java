@@ -191,6 +191,16 @@ public class Zip64Eocd {
           0,
           "Version 2: Hash length");
 
+  /** The location of the Zip64 size field relative to the start of the Zip64 EOCD. */
+  public static final int SIZE_OFFSET = F_EOCD_SIZE.offset();
+
+  /**
+   * The difference between the size in the size field and the true size of the Zip64 EOCD. The size
+   * field in the EOCD does not consider the size field and the identifier field when calculating
+   * the size of the Zip64 EOCD record.
+   */
+  public static final int TRUE_SIZE_DIFFERENCE = F_EOCD_SIZE.endOffset();
+
   /** Code of the program that made the zip. We actually don't care about this. */
   private final long madeBy;
 

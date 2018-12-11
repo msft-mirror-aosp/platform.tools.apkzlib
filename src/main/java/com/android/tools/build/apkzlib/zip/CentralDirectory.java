@@ -198,14 +198,14 @@ class CentralDirectory {
    * @throws IOException failed to read data from the zip, or the central directory is corrupted or
    *     has unsupported features
    */
-  static CentralDirectory makeFromData(ByteBuffer bytes, int count, ZFile file, ByteStorage storage)
+  static CentralDirectory makeFromData(ByteBuffer bytes, long count, ZFile file, ByteStorage storage)
       throws IOException {
     Preconditions.checkNotNull(bytes, "bytes == null");
     Preconditions.checkArgument(count >= 0, "count < 0");
 
     CentralDirectory directory = new CentralDirectory(file);
 
-    for (int i = 0; i < count; i++) {
+    for (long i = 0; i < count; i++) {
       try {
         directory.readEntry(bytes, storage);
       } catch (IOException e) {
@@ -369,6 +369,18 @@ class CentralDirectory {
    */
   Map<String, StoredEntry> getEntries() {
     return ImmutableMap.copyOf(entries);
+  }
+
+  /**
+   * Obtains whether the Central Directory contains any files with Zip64 file extensions.
+   *
+   * <p>At the present time, files in the Zip64 format are not supported, so this method returns
+   * false.
+   *
+   * @return false, as Zip64 formatted files are not supported
+   */
+  boolean containsZip64Files() {
+    return false;
   }
 
   /**
