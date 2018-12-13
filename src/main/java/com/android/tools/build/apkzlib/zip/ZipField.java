@@ -31,10 +31,15 @@ import javax.annotation.Nullable;
  * The ZipField class represents a field in a record in a zip file. Zip files are made with records
  * that have fields. This class makes it easy to read, write and verify field values.
  *
- * <p>There are two main types of fields: 2-byte fields and 4-byte fields. We represent each one as
- * a subclass of {@code ZipField}, {@code F2} for the 2-byte field and {@code F4} for the 4-byte
- * field. Because Java's {@code int} data type is guaranteed to be 4-byte, all methods use Java's
- * native {@link int} as data type.
+ * <p>There are three main types of fields: 2-byte, 4-byte, and 8-byte fields. We represent each
+ * one as a subclass of {@code ZipField}, {@code F2} for the 2-byte field, {@code F4} for the 4-byte
+ * field and {@code F8} for the 8-byte field. Because Java's {@code int} data type is guaranteed to
+ * be 4-byte, all methods use Java's native {@link int} as data type.
+ *
+ * <p>The {@code F8} subclass is to support the 8-byte fields in the Zip64 specification. Because
+ * Java's 8-byte {@code long} does not support unsigned types, which reduces the support to 8-byte
+ * numbers of the form 2^63-1 or less. As {@code F8} fields refer to file sizes, this should be
+ * sufficient.
  *
  * <p>For each field we can either read, write or verify. Verification is used for fields whose
  * value we know. Some fields, <em>e.g.</em> signature fields, have fixed value. Other fields have
@@ -50,6 +55,7 @@ import javax.annotation.Nullable;
  * <pre>
  * ZipField.F2 firstField = new ZipField.F2(0, "First field");
  * ZipField.F4 secondField = new ZipField(firstField.endOffset(), "Second field");
+ * ZipField.F8 thirdField = new ZipField(secondField.endOffset(), "Third field");
  * </pre>
  */
 abstract class ZipField {
@@ -60,7 +66,7 @@ abstract class ZipField {
   /** Offset of the file in the record. */
   protected final int offset;
 
-  /** Size of the field. Only 2 or 4 allowed. */
+  /** Size of the field. Only 2, 4, or 8 allowed. */
   private final int size;
 
   /** If a fixed value exists for the field, then this attribute will contain that value. */
@@ -79,7 +85,9 @@ abstract class ZipField {
    */
   ZipField(int offset, int size, String name, ZipFieldInvariant... invariants) {
     Preconditions.checkArgument(offset >= 0, "offset >= 0");
-    Preconditions.checkArgument(size == 2 || size == 4, "size != 2 && size != 4");
+    Preconditions.checkArgument(
+        size == 2 || size == 4 || size == 8,
+        "size != 2 && size != 4 && size != 8");
 
     this.name = name;
     this.offset = offset;
@@ -98,7 +106,9 @@ abstract class ZipField {
    */
   ZipField(int offset, int size, long expected, String name) {
     Preconditions.checkArgument(offset >= 0, "offset >= 0");
-    Preconditions.checkArgument(size == 2 || size == 4, "size != 2 && size != 4");
+    Preconditions.checkArgument(
+        size == 2 || size == 4 || size == 8,
+        "size != 2 && size != 4 && size != 8");
 
     this.name = name;
     this.offset = offset;
@@ -173,8 +183,10 @@ abstract class ZipField {
     long r;
     if (size == 2) {
       r = LittleEndianUtils.readUnsigned2Le(bytes);
-    } else {
+    } else if (size == 4) {
       r = LittleEndianUtils.readUnsigned4Le(bytes);
+    } else {
+      r = LittleEndianUtils.readUnsigned8Le(bytes);
     }
 
     checkVerifiesInvariants(r);
@@ -264,11 +276,13 @@ abstract class ZipField {
     if (size == 2) {
       Preconditions.checkArgument(value <= 0x0000ffff, "value (%s) > 0x0000ffff", value);
       LittleEndianUtils.writeUnsigned2Le(output, Ints.checkedCast(value));
-    } else {
-      Verify.verify(size == 4);
+    } else if (size == 4) {
       Preconditions.checkArgument(
           value <= 0x00000000ffffffffL, "value (%s) > 0x00000000ffffffffL", value);
       LittleEndianUtils.writeUnsigned4Le(output, value);
+    } else {
+      Verify.verify(size == 8);
+      LittleEndianUtils.writeUnsigned8Le(output, value);
     }
   }
 
@@ -351,6 +365,32 @@ abstract class ZipField {
      */
     F4(int offset, long expected, String name) {
       super(offset, 4, expected, name);
+    }
+  }
+
+  /** Concrete implementation of {@link ZipField} that represents a 8-byte field. */
+  static class F8 extends ZipField {
+
+    /**
+     * Creates a new field
+     *
+     * @param offset offset the field's offset in the record
+     * @param name the field's name
+     * @param invariants the invariants that must be verified by the field
+     */
+    F8(int offset, String name, ZipFieldInvariant... invariants) {
+      super(offset, 8, name, invariants);
+    }
+
+    /**
+     * Creates a new field that contains a fixed value.
+     *
+     * @param offset the field's offset in the record
+     * @param expected the expected field value
+     * @param name the field's name
+     */
+    F8(int offset, long expected, String name) {
+      super(offset, 8, expected, name);
     }
   }
 }

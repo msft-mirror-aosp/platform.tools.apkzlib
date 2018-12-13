@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2018 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,28 @@
 
 package com.android.tools.build.apkzlib.zip;
 
-/** Invariant checking a zip field does not exceed a threshold. */
-class ZipFieldInvariantMaxValue implements ZipFieldInvariant {
+/** Invariant checking a zip field doesn't go below a given value.*/
+class ZipFieldInvariantMinValue implements ZipFieldInvariant {
 
-  /** The maximum value allowed. */
-  private final long max;
+  /** The minimum value allowed. */
+  private final long min;
 
   /**
    * Creates a new invariant.
    *
-   * @param max the maximum value allowed for the field
+   * @param min the minimum value allowed for the field
    */
-  ZipFieldInvariantMaxValue(long max) {
-    this.max = max;
+  ZipFieldInvariantMinValue(long min) {
+    this.min = min;
   }
 
   @Override
   public boolean isValid(long value) {
-    return value <= max;
+    return value >= min;
   }
 
   @Override
   public String getName() {
-    return "Maximum value " + max;
+    return "Min value " + min;
   }
 }
