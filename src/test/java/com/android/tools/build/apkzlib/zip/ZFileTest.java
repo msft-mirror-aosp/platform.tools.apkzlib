@@ -820,21 +820,37 @@ public class ZFileTest {
      * central directory until the offset field in the EOCD and after the offset field.
      */
     int p1Start = 0;
+    // Skipping both time and date (just in case), 2 bytes each
+    int p1BeforeTime = 10;
+    int p1AfterDate = 14;
     int p1Size = ZFileTestConstants.LOCAL_HEADER_SIZE + 1 + 2;
     int p2Start = ZFileTestConstants.LOCAL_HEADER_SIZE + 1 + 2;
-    int p2Size = cdSize + Eocd.F_CD_SIZE.endOffset();
+    int p2BeforeTimeSize = 12;
+    int p2AfterDate = p2Start + 16;
+    int p2AfterDateSize = cdSize + Eocd.F_CD_SIZE.endOffset() - 16;
     int p3Start = p2Start + cdSize + Eocd.F_CD_OFFSET.endOffset();
     int p3Size = ZFileTestConstants.EOCD_SIZE - Eocd.F_CD_OFFSET.endOffset();
 
-    byte[] noOffsetData1 = readSegment(zipNoOffsetFile, p1Start, p1Size);
-    byte[] noOffsetData2 = readSegment(zipNoOffsetFile, p2Start, p2Size);
+    byte[] noOffsetData1BeforeTime = readSegment(zipNoOffsetFile, p1Start, p1BeforeTime);
+    byte[] noOffsetData1AfterDate =
+            readSegment(zipNoOffsetFile, p1AfterDate, p1Size - p1AfterDate);
+    byte[] noOffsetData2BeforeTime = readSegment(zipNoOffsetFile, p2Start, p2BeforeTimeSize);
+    byte[] noOffsetData2AfterDate =
+            readSegment(zipNoOffsetFile, p2AfterDate, p2AfterDateSize);
     byte[] noOffsetData3 = readSegment(zipNoOffsetFile, p3Start, p3Size);
-    byte[] withOffsetData1 = readSegment(zipWithOffsetFile, p1Start, p1Size);
-    byte[] withOffsetData2 = readSegment(zipWithOffsetFile, 37 + p2Start, p2Size);
+    byte[] withOffsetData1BeforeTime = readSegment(zipWithOffsetFile, p1Start, p1BeforeTime);
+    byte[] withOffsetData1AfterDate =
+            readSegment(zipWithOffsetFile, p1AfterDate, p1Size - p1AfterDate);
+    byte[] withOffsetData2BeforeTime =
+            readSegment(zipWithOffsetFile, 37 + p2Start, p2BeforeTimeSize);
+    byte[] withOffsetData2AfterDate =
+            readSegment(zipWithOffsetFile, 37 + p2AfterDate, p2AfterDateSize);
     byte[] withOffsetData3 = readSegment(zipWithOffsetFile, 37 + p3Start, p3Size);
 
-    assertArrayEquals(noOffsetData1, withOffsetData1);
-    assertArrayEquals(noOffsetData2, withOffsetData2);
+    assertArrayEquals(noOffsetData1BeforeTime, withOffsetData1BeforeTime);
+    assertArrayEquals(noOffsetData1AfterDate, withOffsetData1AfterDate);
+    assertArrayEquals(noOffsetData2BeforeTime, withOffsetData2BeforeTime);
+    assertArrayEquals(noOffsetData2AfterDate, withOffsetData2AfterDate);
     assertArrayEquals(noOffsetData3, withOffsetData3);
 
     try (ZFile readWithOffset = ZFile.openReadWrite(zipWithOffsetFile)) {
