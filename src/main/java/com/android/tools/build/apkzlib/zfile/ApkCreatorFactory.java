@@ -16,10 +16,10 @@
 
 package com.android.tools.build.apkzlib.zfile;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.android.tools.build.apkzlib.sign.SigningOptions;
+import com.google.auto.value.AutoValue;
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import java.io.File;
 import javax.annotation.Nonnull;
@@ -39,53 +39,42 @@ public interface ApkCreatorFactory {
    * Data structure with the required information to initiate the creation of an APK. See {@link
    * ApkCreatorFactory#make(CreationData)}.
    */
-  class CreationData {
+  @AutoValue
+  abstract class CreationData {
 
-    /**
-     * The path where the APK should be located. May already exist or not (if it does, then the APK
-     * may be updated instead of created).
-     */
-    private final File apkPath;
+    /** An implementation of builder pattern to create a {@link CreationData} object. */
+    @AutoValue.Builder
+    public abstract static class Builder {
+      public abstract Builder setApkPath(@Nonnull File apkPath);
 
-    /** Data used to sign the APK */
-    private final Optional<SigningOptions> signingOptions;
+      public abstract Builder setSigningOptions(@Nonnull SigningOptions signingOptions);
 
-    /** Built-by information for the APK, if any. */
-    @Nullable private final String builtBy;
+      public abstract Builder setBuiltBy(@Nullable String buildBy);
 
-    /** Created-by information for the APK, if any. */
-    @Nullable private final String createdBy;
+      public abstract Builder setCreatedBy(@Nullable String createdBy);
 
-    /** How should native libraries be packaged? */
-    private final NativeLibrariesPackagingMode nativeLibrariesPackagingMode;
+      public abstract Builder setNativeLibrariesPackagingMode(
+          NativeLibrariesPackagingMode packagingMode);
 
-    /** Predicate identifying paths that should not be compressed. */
-    private final Predicate<String> noCompressPredicate;
+      public abstract Builder setNoCompressPredicate(Predicate<String> predicate);
 
-    /**
-     * @param apkPath the path where the APK should be located. May already exist or not (if it
-     *     does, then the APK may be updated instead of created)
-     * @param builtBy built-by information for the APK, if any; if {@code null} then the default
-     *     should be used
-     * @param createdBy created-by information for the APK, if any; if {@code null} then the default
-     *     should be used
-     * @param nativeLibrariesPackagingMode packaging mode for native libraries
-     * @param noCompressPredicate predicate to decide which file paths should be uncompressed;
-     *     returns {@code true} for files that should not be compressed
-     */
-    public CreationData(
-        File apkPath,
-        @Nonnull Optional<SigningOptions> signingOptions,
-        @Nullable String builtBy,
-        @Nullable String createdBy,
-        NativeLibrariesPackagingMode nativeLibrariesPackagingMode,
-        Predicate<String> noCompressPredicate) {
-      this.apkPath = apkPath;
-      this.signingOptions = signingOptions;
-      this.builtBy = builtBy;
-      this.createdBy = createdBy;
-      this.nativeLibrariesPackagingMode = checkNotNull(nativeLibrariesPackagingMode);
-      this.noCompressPredicate = checkNotNull(noCompressPredicate);
+      public abstract Builder setIncremental(boolean incremental);
+
+      abstract CreationData autoBuild();
+
+      public CreationData build() {
+        CreationData data = autoBuild();
+        Preconditions.checkArgument(data.getApkPath() != null, "Output apk path is not set");
+        return data;
+      }
+    }
+
+    public static Builder builder() {
+      return new AutoValue_ApkCreatorFactory_CreationData.Builder()
+          .setBuiltBy(null)
+          .setCreatedBy(null)
+          .setNoCompressPredicate(s -> false)
+          .setIncremental(false);
     }
 
     /**
@@ -94,9 +83,7 @@ public interface ApkCreatorFactory {
      *
      * @return the path that may already exist or not
      */
-    public File getApkPath() {
-      return apkPath;
-    }
+    public abstract File getApkPath();
 
     /**
      * Obtains the data used to sign the APK.
@@ -104,9 +91,7 @@ public interface ApkCreatorFactory {
      * @return the SigningOptions
      */
     @Nonnull
-    public Optional<SigningOptions> getSigningOptions() {
-      return signingOptions;
-    }
+    public abstract Optional<SigningOptions> getSigningOptions();
 
     /**
      * Obtains the "built-by" text for the APK.
@@ -114,9 +99,7 @@ public interface ApkCreatorFactory {
      * @return the text or {@code null} if the default should be used
      */
     @Nullable
-    public String getBuiltBy() {
-      return builtBy;
-    }
+    public abstract String getBuiltBy();
 
     /**
      * Obtains the "created-by" text for the APK.
@@ -124,18 +107,22 @@ public interface ApkCreatorFactory {
      * @return the text or {@code null} if the default should be used
      */
     @Nullable
-    public String getCreatedBy() {
-      return createdBy;
-    }
+    public abstract String getCreatedBy();
 
     /** Returns the packaging policy that the {@link ApkCreator} should use for native libraries. */
-    public NativeLibrariesPackagingMode getNativeLibrariesPackagingMode() {
-      return nativeLibrariesPackagingMode;
-    }
+    public abstract NativeLibrariesPackagingMode getNativeLibrariesPackagingMode();
 
     /** Returns the predicate to decide which file paths should be uncompressed. */
-    public Predicate<String> getNoCompressPredicate() {
-      return noCompressPredicate;
-    }
+    public abstract Predicate<String> getNoCompressPredicate();
+
+    /**
+     * Returns if this apk build is incremental.
+     *
+     * As mentioned in {@link getApkPath} description, we may already have an existing apk in place.
+     * This is the case when e.g. building APK via build system and this is not the first build.
+     * In that case the build is called incremental and internal APK data might be reused speeding
+     * the build up.
+     */
+    public abstract boolean isIncremental();
   }
 }

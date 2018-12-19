@@ -46,6 +46,15 @@ public class ZFileOptions {
   /** Should files be automatically sorted before update? */
   private boolean autoSortFiles;
 
+  /**
+   * Skip expensive validation during {@link ZFile} creation?
+   *
+   * During incremental build we are absolutely sure that the zip file is valid, so we do not have
+   * to spend time verifying different fields (some of these checks are relatively expensive and
+   * should be skipped if possible for performance)
+   */
+  private boolean skipValidation;
+
   /** Factory creating verification logs to use. */
   private Supplier<VerifyLog> verifyLogFactory;
 
@@ -61,6 +70,7 @@ public class ZFileOptions {
     // We set this to true because many utilities stream the zip and expect no space between entries
     // in the zip file.
     coverEmptySpaceUsingExtraField = true;
+    skipValidation = false;
   }
 
   /**
@@ -205,5 +215,24 @@ public class ZFileOptions {
    */
   public Supplier<VerifyLog> getVerifyLogFactory() {
     return verifyLogFactory;
+  }
+
+  /**
+   * Sets whether expensive validation should be skipped during {@link ZFile} creation
+   *
+   * @param skipValidation during creation?
+   */
+  public ZFileOptions setSkipValidation(boolean skipValidation) {
+    this.skipValidation = skipValidation;
+    return this;
+  }
+
+  /**
+   * Gets whether expensive validation should be performed during {@link ZFile} creation
+   *
+   * @return skip verification during creation?
+   */
+  public boolean getSkipValidation() {
+    return skipValidation;
   }
 }

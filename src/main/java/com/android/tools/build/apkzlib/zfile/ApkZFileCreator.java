@@ -73,6 +73,9 @@ class ApkZFileCreator implements ApkCreator {
       default:
         throw new AssertionError();
     }
+    // In case of incremental build we can skip validation since we generated the previous apk and
+    // we trust ourselves
+    options.setSkipValidation(creationData.isIncremental());
 
     zip =
         ZFiles.apk(

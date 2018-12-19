@@ -25,7 +25,6 @@ import com.android.tools.build.apkzlib.zip.CompressionMethod;
 import com.android.tools.build.apkzlib.zip.StoredEntry;
 import com.android.tools.build.apkzlib.zip.ZFile;
 import com.android.tools.build.apkzlib.zip.ZFileOptions;
-import com.google.common.base.Optional;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.file.Files;
@@ -48,13 +47,10 @@ public class ApkAlignmentTest {
 
     ApkZFileCreatorFactory cf = new ApkZFileCreatorFactory(new ZFileOptions());
     ApkCreatorFactory.CreationData creationData =
-        new ApkCreatorFactory.CreationData(
-            apk,
-            Optional.absent(),
-            null,
-            null,
-            NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED,
-            path -> false);
+        ApkCreatorFactory.CreationData.builder()
+            .setApkPath(apk)
+            .setNativeLibrariesPackagingMode(NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED)
+            .build();
 
     try (ApkCreator creator = cf.make(creationData)) {
       creator.writeFile(soFile, "/doesnt_work.so");
@@ -94,13 +90,10 @@ public class ApkAlignmentTest {
     File apk = new File(temporaryFolder.getRoot(), "b.apk");
     ApkZFileCreatorFactory cf = new ApkZFileCreatorFactory(new ZFileOptions());
     ApkCreatorFactory.CreationData creationData =
-        new ApkCreatorFactory.CreationData(
-            apk,
-            Optional.absent(),
-            null,
-            null,
-            NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED,
-            path -> false);
+        ApkCreatorFactory.CreationData.builder()
+            .setApkPath(apk)
+            .setNativeLibrariesPackagingMode(NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED)
+            .build();
 
     try (ApkCreator creator = cf.make(creationData)) {
       creator.writeZip(zipToMerge, null, null);
@@ -133,13 +126,10 @@ public class ApkAlignmentTest {
 
     ApkZFileCreatorFactory cf = new ApkZFileCreatorFactory(new ZFileOptions());
     ApkCreatorFactory.CreationData creationData =
-        new ApkCreatorFactory.CreationData(
-            apk,
-            Optional.absent(),
-            null,
-            null,
-            NativeLibrariesPackagingMode.COMPRESSED,
-            path -> false);
+        ApkCreatorFactory.CreationData.builder()
+            .setApkPath(apk)
+            .setNativeLibrariesPackagingMode(NativeLibrariesPackagingMode.COMPRESSED)
+            .build();
 
     try (ApkCreator creator = cf.make(creationData)) {
       creator.writeFile(soFile, "/doesnt_work.so");
@@ -179,13 +169,10 @@ public class ApkAlignmentTest {
     File apk = new File(temporaryFolder.getRoot(), "b.apk");
     ApkZFileCreatorFactory cf = new ApkZFileCreatorFactory(new ZFileOptions());
     ApkCreatorFactory.CreationData creationData =
-        new ApkCreatorFactory.CreationData(
-            apk,
-            Optional.absent(),
-            null,
-            null,
-            NativeLibrariesPackagingMode.COMPRESSED,
-            path -> false);
+        ApkCreatorFactory.CreationData.builder()
+            .setApkPath(apk)
+            .setNativeLibrariesPackagingMode(NativeLibrariesPackagingMode.COMPRESSED)
+            .build();
 
     try (ApkCreator creator = cf.make(creationData)) {
       creator.writeZip(zipToMerge, null, null);

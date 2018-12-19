@@ -343,6 +343,9 @@ public class ZFile implements Closeable {
   /** Verify log to use. */
   private final VerifyLog verifyLog;
 
+  /** Should skip expensive validation? */
+  private final boolean skipValidation;
+
   /**
    * This field contains the comment in the zip's EOCD if there is no in-memory EOCD structure. This
    * may happen, for example, if the zip has been changed and the Central Directory and EOCD have
@@ -423,6 +426,7 @@ public class ZFile implements Closeable {
     autoSortFiles = options.getAutoSortFiles();
     verifyLogFactory = options.getVerifyLogFactory();
     verifyLog = verifyLogFactory.get();
+    skipValidation = options.getSkipValidation();
 
     /*
      * These two values will be overwritten by openReadOnlyIfClosed() below if the file exists.
@@ -542,6 +546,10 @@ public class ZFile implements Closeable {
    */
   public static ZFile openReadWrite(File file, ZFileOptions options) throws IOException {
     return new ZFile(file, options, false);
+  }
+
+  public boolean getSkipValidation() {
+    return skipValidation;
   }
 
   /**

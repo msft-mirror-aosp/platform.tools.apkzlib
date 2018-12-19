@@ -177,7 +177,11 @@ public class StoredEntry {
     this.storage = storage;
 
     if (cdh.getOffset() >= 0) {
-      readLocalHeader();
+      if (file.getSkipValidation()) {
+        localExtra = cdh.getExtraField();
+      } else {
+        readLocalHeader();
+      }
 
       Preconditions.checkArgument(
           source == null, "Source was defined but contents already exist on file.");
