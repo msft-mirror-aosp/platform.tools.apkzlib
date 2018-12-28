@@ -119,6 +119,7 @@ public class SigningExtension {
             .setOtherSignersSignaturesPreserved(false)
             .setV1SigningEnabled(opts.isV1SigningEnabled())
             .setV2SigningEnabled(opts.isV2SigningEnabled())
+            .setV3SigningEnabled(false)
             .setCreatedBy("1.0 (Android)")
             .build();
     this.options = opts;
