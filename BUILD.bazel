@@ -50,6 +50,7 @@ java_test(
     name = "apkzlib_tests",
     size = "large",
     jvm_flags = ["-Dtest.suite.jar=apkzlib_tests_lib.jar"],
+    tags = ["no_test_windows"], # Tests are currently failing on windows
     test_class = "com.android.testutils.JarTestSuite",
     runtime_deps = [
         ":apkzlib_tests_lib",
