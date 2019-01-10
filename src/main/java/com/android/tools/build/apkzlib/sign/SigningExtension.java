@@ -30,6 +30,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -133,6 +135,16 @@ public class SigningExtension {
         dirty = !isCurrentSignatureAsRequested();
         break;
       case ASSUME_VALID:
+        Set<String> entryNames =
+            ImmutableSet.copyOf(
+                Iterables.transform(zFile.entries(), e -> e.getCentralDirectoryHeader().getName()));
+        StoredEntry manifestEntry = zFile.get(ManifestGenerationExtension.MANIFEST_NAME);
+
+        if (manifestEntry != null) {
+          signerProcessedOutputEntryNames.addAll(
+              this.signer.initWith(manifestEntry.read(), entryNames));
+        }
+
         dirty = false;
         break;
       case ASSUME_INVALID:
