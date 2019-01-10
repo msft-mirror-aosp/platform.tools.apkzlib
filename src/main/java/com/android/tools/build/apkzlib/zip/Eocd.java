@@ -28,6 +28,16 @@ import java.nio.ByteBuffer;
 
 /** End Of Central Directory record in a zip file. */
 class Eocd {
+
+  /** Max total records that can be specified by the standard EOCD. */
+  static final long MAX_TOTAL_RECORDS = 0xFFFFL;
+
+  /** Max size of the Central Directory that can be specified by the standard EOCD. */
+  static final long MAX_CD_SIZE = 0xFFFFFFFFL;
+
+  /** Max offset of the Central Directory that can be specified by the standard EOCD. */
+  static final long MAX_CD_OFFSET = 0xFFFFFFFFL;
+
   /** Field in the record: the record signature, fixed at this value by the specification. */
   private static final ZipField.F4 F_SIGNATURE = new ZipField.F4(0, 0x06054b50, "EOCD signature");
 
@@ -53,7 +63,11 @@ class Eocd {
       new ZipField.F2(
           F_DISK_CD_START.endOffset(), "Record on disk count", new ZipFieldInvariantNonNegative());
 
-  /** Field in the record: the total number of entries in the Central Directory. */
+  /**
+   * Field in the record: the total number of entries in the Central Directory. This value will be
+   * {@link #MAX_TOTAL_RECORDS} if the file is in the Zip64 format, and the Central Directory holds
+   * at least {@link #MAX_TOTAL_RECORDS} entries.
+   */
   private static final ZipField.F2 F_RECORDS_TOTAL =
       new ZipField.F2(
           F_RECORDS_DISK.endOffset(),
@@ -63,7 +77,8 @@ class Eocd {
 
   /**
    * Field in the record: number of bytes of the Central Directory. This is not private because it
-   * is required in unit tests.
+   * is required in unit tests. This value will be {@link #MAX_CD_SIZE} if the file is in the Zip64
+   * format, and the Central Directory is at least {@link #MAX_CD_SIZE} bytes.
    */
   @VisibleForTesting
   static final ZipField.F4 F_CD_SIZE =
@@ -72,7 +87,9 @@ class Eocd {
 
   /**
    * Field in the record: offset, from the archive start, where the Central Directory starts. This
-   * is not private because it is required in unit tests.
+   * is not private because it is required in unit tests. This value will be {@link #MAX_CD_OFFSET}
+   * if the file is in the Zip64 format, and the Central Directory is at least
+   * {@link #MAX_CD_OFFSET} bytes.
    */
   @VisibleForTesting
   static final ZipField.F4 F_CD_OFFSET =
@@ -88,7 +105,7 @@ class Eocd {
           F_CD_OFFSET.endOffset(), "File comment size", new ZipFieldInvariantNonNegative());
 
   /** Number of entries in the central directory. */
-  private final int totalRecords;
+  private final long totalRecords;
 
   /** Offset from the beginning of the archive where the Central Directory is located. */
   private final long directoryOffset;
@@ -161,7 +178,7 @@ class Eocd {
    * @param directorySize number of bytes of the Central Directory
    * @param comment the EOCD comment
    */
-  Eocd(int totalRecords, long directoryOffset, long directorySize, byte[] comment) {
+  Eocd(long totalRecords, long directoryOffset, long directorySize, byte[] comment) {
     Preconditions.checkArgument(totalRecords >= 0, "totalRecords < 0");
     Preconditions.checkArgument(directoryOffset >= 0, "directoryOffset < 0");
     Preconditions.checkArgument(directorySize >= 0, "directorySize < 0");
@@ -178,7 +195,7 @@ class Eocd {
    *
    * @return the number of records
    */
-  int getTotalRecords() {
+  long getTotalRecords() {
     return totalRecords;
   }
 
@@ -220,7 +237,7 @@ class Eocd {
     return byteSupplier.get();
   }
 
-  /*
+  /**
    * Obtains the comment in the EOCD.
    *
    * @return the comment exactly as it is represented in the file (no encoding conversion is
