@@ -165,6 +165,7 @@ public class ZFiles {
    * @return the zip file
    * @throws IOException failed to create the zip file
    */
+  @Deprecated
   public static ZFile apk(
       File f,
       ZFileOptions options,
@@ -172,22 +173,54 @@ public class ZFiles {
       @Nullable String builtBy,
       @Nullable String createdBy)
       throws IOException {
+    return apk(f, options, signingOptions, builtBy, createdBy, true);
+  }
+
+  /**
+   * Creates a new zip file configured as an apk, based on a given file.
+   *
+   * @param f the file, if this path does not represent an existing path, will create a {@link
+   *     ZFile} based on an non-existing path (a zip will be created when {@link ZFile#close()} is
+   *     invoked)
+   * @param options the options to create the {@link ZFile}
+   * @param signingOptions the options to sign the apk
+   * @param builtBy who to mark as builder in the manifest
+   * @param createdBy who to mark as creator in the manifest
+   * @param writeManifest a migration parameter that forces keeping (useless) manifest.mf file in
+   *     apk file in order to prevent breaking changes. Clients of the previous interface will still
+   *     get apk with manifest.mf because the flag is true by default
+   * @return the zip file
+   * @throws IOException failed to create the zip file
+   */
+  @Deprecated
+  // This method should be removed once this version of apkzlib is released to maven
+  public static ZFile apk(
+      File f,
+      ZFileOptions options,
+      Optional<SigningOptions> signingOptions,
+      @Nullable String builtBy,
+      @Nullable String createdBy,
+      boolean writeManifest)
+      throws IOException {
     ZFile zfile = apk(f, options);
 
-    if (builtBy == null) {
-      builtBy = DEFAULT_BUILD_BY;
-    }
+    if ((signingOptions.isPresent() && signingOptions.get().isV1SigningEnabled())
+        || writeManifest) {
+      if (builtBy == null) {
+        builtBy = DEFAULT_BUILD_BY;
+      }
 
-    if (createdBy == null) {
-      createdBy = DEFAULT_CREATED_BY;
+      if (createdBy == null) {
+        createdBy = DEFAULT_CREATED_BY;
+      }
+      ManifestGenerationExtension manifestExt = new ManifestGenerationExtension(builtBy, createdBy);
+      manifestExt.register(zfile);
     }
-
-    ManifestGenerationExtension manifestExt = new ManifestGenerationExtension(builtBy, createdBy);
-    manifestExt.register(zfile);
 
     if (signingOptions.isPresent()) {
+      SigningOptions signOptions = signingOptions.get();
       try {
-        new SigningExtension(signingOptions.get()).register(zfile);
+        new SigningExtension(signOptions).register(zfile);
       } catch (NoSuchAlgorithmException | InvalidKeyException e) {
         throw new IOException("Failed to create signature extensions", e);
       }

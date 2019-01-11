@@ -135,12 +135,16 @@ public class SigningExtension {
         dirty = !isCurrentSignatureAsRequested();
         break;
       case ASSUME_VALID:
-        Set<String> entryNames =
-            ImmutableSet.copyOf(
-                Iterables.transform(zFile.entries(), e -> e.getCentralDirectoryHeader().getName()));
-        StoredEntry manifestEntry = zFile.get(ManifestGenerationExtension.MANIFEST_NAME);
+        if (options.isV1SigningEnabled()) {
+          Set<String> entryNames =
+              ImmutableSet.copyOf(
+                  Iterables.transform(
+                      zFile.entries(), e -> e.getCentralDirectoryHeader().getName()));
+          StoredEntry manifestEntry = zFile.get(ManifestGenerationExtension.MANIFEST_NAME);
 
-        if (manifestEntry != null) {
+          Preconditions.checkNotNull(
+              manifestEntry,
+              "No manifest found in apk for incremental build with enabled v1 signature");
           signerProcessedOutputEntryNames.addAll(
               this.signer.initWith(manifestEntry.read(), entryNames));
         }

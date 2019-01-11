@@ -29,6 +29,7 @@ import com.google.common.base.Optional;
 import java.io.File;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -37,14 +38,21 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class ZFilesTest {
+  private static final String MANIFEST_NAME = "META-INF/MANIFEST.MF";
+
   @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+  private ApkZLibPair<PrivateKey, X509Certificate> signingData;
+
+  @Before
+  public void setUp() throws Exception {
+    signingData = SignatureTestUtils.generateSignaturePos18();
+  }
 
   @Test
   public void testSigningVeryBigZipEntries() throws Exception {
     final long FILE_SIZE = 2_200_000_000L;
     File zpath = new File(temporaryFolder.getRoot(), "a.zip");
-    ApkZLibPair<PrivateKey, X509Certificate> signingData =
-        SignatureTestUtils.generateSignaturePos18();
     Optional<SigningOptions> signingOptions =
         Optional.of(
             SigningOptions.builder()
@@ -68,6 +76,60 @@ public class ZFilesTest {
     try (ZFile zf = ZFile.openReadOnly(zpath)) {
       StoredEntry e = zf.get("foo");
       assertThat(e.getCentralDirectoryHeader().getUncompressedSize()).isEqualTo(FILE_SIZE);
+    }
+  }
+
+  @Test
+  public void testManifestExistsIfV1Enabled() throws Exception {
+    File zpath = new File(temporaryFolder.getRoot(), "a.zip");
+    Optional<SigningOptions> signingOptions =
+        Optional.of(
+            SigningOptions.builder()
+                .setKey(signingData.v1)
+                .setCertificates(signingData.v2)
+                .setV1SigningEnabled(true)
+                .setV2SigningEnabled(true)
+                .setMinSdkVersion(18)
+                .build());
+
+    try (ZFile zf =
+        ZFiles.apk(
+            zpath,
+            new ZFileOptions(),
+            signingOptions,
+            /* builtBy= */ null,
+            /* createdBy= */ null,
+            false)) {}
+
+    try (ZFile zf = ZFile.openReadOnly(zpath)) {
+      assertThat(zf.get(MANIFEST_NAME)).isNotNull();
+    }
+  }
+
+  @Test
+  public void testManifestDoesNotExistIfV1Disabled() throws Exception {
+    File zpath = new File(temporaryFolder.getRoot(), "a.zip");
+    Optional<SigningOptions> signingOptions =
+        Optional.of(
+            SigningOptions.builder()
+                .setKey(signingData.v1)
+                .setCertificates(signingData.v2)
+                .setV1SigningEnabled(false)
+                .setV2SigningEnabled(true)
+                .setMinSdkVersion(18)
+                .build());
+
+    try (ZFile zf =
+        ZFiles.apk(
+            zpath,
+            new ZFileOptions(),
+            signingOptions,
+            /* builtBy= */ null,
+            /* createdBy= */ null,
+            false)) {}
+
+    try (ZFile zf = ZFile.openReadOnly(zpath)) {
+      assertThat(zf.get(MANIFEST_NAME)).isNull();
     }
   }
 }

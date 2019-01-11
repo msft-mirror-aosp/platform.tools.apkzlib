@@ -1238,7 +1238,7 @@ public class ZFile implements Closeable {
         throw new IOException(
             "Extensions keep resetting the central directory. This is " + "probably a bug.");
       }
-    } while (hasCentralDirectory && directoryEntry == null);
+    } while ((hasCentralDirectory && directoryEntry == null) || eocdEntry == null);
 
     if (changedAnything) {
       reopenRw();
