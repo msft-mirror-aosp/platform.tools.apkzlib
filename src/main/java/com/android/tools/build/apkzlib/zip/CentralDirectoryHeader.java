@@ -40,6 +40,8 @@ public class CentralDirectoryHeader implements Cloneable {
    */
   private static final int DEFAULT_VERSION_MADE_BY = 0x0018;
 
+  private static final byte[] EMPTY_COMMENT = new byte[0];
+
   /** Name of the file. */
   private final String name;
 
@@ -108,6 +110,26 @@ public class CentralDirectoryHeader implements Cloneable {
       Future<CentralDirectoryHeaderCompressInfo> compressInfo,
       GPFlags flags,
       ZFile zFile) {
+    this(
+        name,
+        encodedFileName,
+        uncompressedSize,
+        compressInfo,
+        flags,
+        zFile,
+        MsDosDateTimeUtils.packCurrentTime(),
+        MsDosDateTimeUtils.packCurrentDate());
+  }
+
+  CentralDirectoryHeader(
+      String name,
+      byte[] encodedFileName,
+      long uncompressedSize,
+      Future<CentralDirectoryHeaderCompressInfo> compressInfo,
+      GPFlags flags,
+      ZFile zFile,
+      long currentTime,
+      long currentDate) {
     this.name = name;
     this.uncompressedSize = uncompressedSize;
     crc32 = 0;
@@ -118,10 +140,10 @@ public class CentralDirectoryHeader implements Cloneable {
     madeBy = DEFAULT_VERSION_MADE_BY;
 
     gpBit = flags;
-    lastModTime = MsDosDateTimeUtils.packCurrentTime();
-    lastModDate = MsDosDateTimeUtils.packCurrentDate();
-    extraField = new ExtraField();
-    comment = new byte[0];
+    lastModTime = currentTime;
+    lastModDate = currentDate;
+    extraField = ExtraField.EMPTY;
+    comment = EMPTY_COMMENT;
     internalAttributes = 0;
     externalAttributes = 0;
     offset = -1;

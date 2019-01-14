@@ -18,9 +18,12 @@ package com.android.tools.build.apkzlib.zip;
 
 import com.android.tools.build.apkzlib.bytestorage.ByteStorage;
 import com.android.tools.build.apkzlib.bytestorage.CloseableByteSourceFromOutputStreamBuilder;
+import com.android.tools.build.apkzlib.utils.IOExceptionWrapper;
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.base.Verify;
 import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Ints;
@@ -140,7 +143,7 @@ public class StoredEntry {
   @Nonnull private ExtraField localExtra;
 
   /** Type of data descriptor associated with the entry. */
-  private DataDescriptorType dataDescriptorType;
+  private Supplier<DataDescriptorType> dataDescriptorType;
 
   /**
    * Source for this entry's data. If this entry is a directory, this source has to have zero size.
@@ -235,7 +238,7 @@ public class StoredEntry {
      * By default we assume there is no data descriptor unless the CRC is marked as deferred
      * in the header's GP Bit.
      */
-    dataDescriptorType = DataDescriptorType.NO_DATA_DESCRIPTOR;
+    dataDescriptorType = Suppliers.ofInstance(DataDescriptorType.NO_DATA_DESCRIPTOR);
     if (header.getGpBit().isDeferredCrc()) {
       /*
        * If the deferred CRC bit exists, then we have an extra descriptor field. This extra
@@ -245,11 +248,16 @@ public class StoredEntry {
           header.getOffset() >= 0,
           "Files that are not on disk cannot have the " + "deferred CRC bit set.");
 
-      try {
-        readDataDescriptorRecord();
-      } catch (IOException e) {
-        throw new IOException("Failed to read data descriptor record.", e);
-      }
+      dataDescriptorType =
+          Suppliers.memoize(
+              () -> {
+                try {
+                  return readDataDescriptorRecord();
+                } catch (IOException e) {
+                  throw new IOExceptionWrapper(
+                      new IOException("Failed to read data descriptor record.", e));
+                }
+              });
     }
   }
 
@@ -274,7 +282,7 @@ public class StoredEntry {
     Preconditions.checkState(!deleted, "deleted");
     return cdh.getCompressionInfoWithWait().getCompressedSize()
         + getLocalHeaderSize()
-        + dataDescriptorType.size;
+        + dataDescriptorType.get().size;
   }
 
   /**
@@ -451,7 +459,7 @@ public class StoredEntry {
    *
    * @throws IOException failed to read the data descriptor record
    */
-  private void readDataDescriptorRecord() throws IOException {
+  private DataDescriptorType readDataDescriptorRecord() throws IOException {
     CentralDirectoryHeaderCompressInfo compressInfo = cdh.getCompressionInfoWithWait();
 
     long ddStart =
@@ -468,10 +476,11 @@ public class StoredEntry {
     ZipField.F4 signatureField = new ZipField.F4(0, "Data descriptor signature");
     int cpos = ddBytes.position();
     long sig = signatureField.read(ddBytes);
+    DataDescriptorType result;
     if (sig == DATA_DESC_SIGNATURE) {
-      dataDescriptorType = DataDescriptorType.DATA_DESCRIPTOR_WITH_SIGNATURE;
+      result = DataDescriptorType.DATA_DESCRIPTOR_WITH_SIGNATURE;
     } else {
-      dataDescriptorType = DataDescriptorType.DATA_DESCRIPTOR_WITHOUT_SIGNATURE;
+      result = DataDescriptorType.DATA_DESCRIPTOR_WITHOUT_SIGNATURE;
       ddBytes.position(cpos);
     }
 
@@ -483,6 +492,7 @@ public class StoredEntry {
     crc32Field.verify(ddBytes, cdh.getCrc32(), verifyLog);
     compressedField.verify(ddBytes, compressInfo.getCompressedSize(), verifyLog);
     uncompressedField.verify(ddBytes, cdh.getUncompressedSize(), verifyLog);
+    return result;
   }
 
   /**
@@ -634,7 +644,7 @@ public class StoredEntry {
    * @return the type of data descriptor
    */
   public DataDescriptorType getDataDescriptorType() {
-    return dataDescriptorType;
+    return dataDescriptorType.get();
   }
 
   /**
@@ -644,11 +654,11 @@ public class StoredEntry {
    * @return was the data descriptor remove?
    */
   boolean removeDataDescriptor() {
-    if (dataDescriptorType == DataDescriptorType.NO_DATA_DESCRIPTOR) {
+    if (dataDescriptorType.get() == DataDescriptorType.NO_DATA_DESCRIPTOR) {
       return false;
     }
 
-    dataDescriptorType = DataDescriptorType.NO_DATA_DESCRIPTOR;
+    dataDescriptorType = Suppliers.ofInstance(DataDescriptorType.NO_DATA_DESCRIPTOR);
     cdh.resetDeferredCrc();
     return true;
   }

@@ -336,7 +336,14 @@ class CentralDirectory {
             new CentralDirectoryHeaderCompressInfo(method, compressedSize, versionNeededToExtract));
     CentralDirectoryHeader centralDirectoryHeader =
         new CentralDirectoryHeader(
-            fileName, encodedFileName, uncompressedSize, compressInfo, flags, file);
+            fileName,
+            encodedFileName,
+            uncompressedSize,
+            compressInfo,
+            flags,
+            file,
+            lastModTime,
+            lastModDate);
     centralDirectoryHeader.setMadeBy(madeBy);
     centralDirectoryHeader.setLastModTime(lastModTime);
     centralDirectoryHeader.setLastModDate(lastModDate);

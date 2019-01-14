@@ -46,6 +46,7 @@ import javax.annotation.Nullable;
  * field unless its contents are needed.
  */
 public class ExtraField {
+  public static final ExtraField EMPTY = new ExtraField();
 
   /** Header ID for field with zip alignment. */
   static final int ALIGNMENT_ZIP_EXTRA_DATA_FIELD_HEADER_ID = 0xd935;
