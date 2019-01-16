@@ -24,13 +24,10 @@ import com.android.tools.build.apkzlib.zip.AlignmentRules;
 import com.android.tools.build.apkzlib.zip.ZFile;
 import com.android.tools.build.apkzlib.zip.ZFileOptions;
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
 import javax.annotation.Nullable;
 
 /** Factory for {@link ZFile}s that are specifically configured to be APKs, AARs, ... */
@@ -67,105 +64,12 @@ public class ZFiles {
    *     ZFile} based on an non-existing path (a zip will be created when {@link ZFile#close()} is
    *     invoked)
    * @param options the options to create the {@link ZFile}
-   * @param key the {@link PrivateKey} used to sign the archive, or {@code null}.
-   * @param certificate the {@link X509Certificate} used to sign the archive, or {@code null}.
-   * @param v1SigningEnabled whether signing with JAR Signature Scheme (aka v1 signing) is enabled.
-   * @param v2SigningEnabled whether signing with APK Signature Scheme v2 (aka v2 signing) is
-   *     enabled.
-   * @param builtBy who to mark as builder in the manifest
-   * @param createdBy who to mark as creator in the manifest
-   * @param minSdkVersion minimum SDK version supported
-   * @return the zip file
-   * @throws IOException failed to create the zip file
-   *
-   * @deprecated Use constructor with {@link SigningOptions} instead
-   */
-  @Deprecated
-  public static ZFile apk(
-      File f,
-      ZFileOptions options,
-      @Nullable PrivateKey key,
-      @Nullable X509Certificate certificate,
-      boolean v1SigningEnabled,
-      boolean v2SigningEnabled,
-      @Nullable String builtBy,
-      @Nullable String createdBy,
-      int minSdkVersion)
-      throws IOException {
-    return apk(
-        f,
-        options,
-        key,
-        certificate == null ? ImmutableList.of() : ImmutableList.of(certificate),
-        v1SigningEnabled,
-        v2SigningEnabled,
-        builtBy,
-        createdBy,
-        minSdkVersion);
-  }
-
-  /**
-   * Creates a new zip file configured as an apk, based on a given file.
-   *
-   * @param f the file, if this path does not represent an existing path, will create a {@link
-   *     ZFile} based on an non-existing path (a zip will be created when {@link ZFile#close()} is
-   *     invoked)
-   * @param options the options to create the {@link ZFile}
-   * @param key the {@link PrivateKey} used to sign the archive, or {@code null}.
-   * @param certificates list of the {@link X509Certificate}s to embed in the signed APKs. The first
-   *     element of the list must be the certificate associated with the private key.
-   * @param v1SigningEnabled whether signing with JAR Signature Scheme (aka v1 signing) is enabled.
-   * @param v2SigningEnabled whether signing with APK Signature Scheme v2 (aka v2 signing) is
-   *     enabled.
-   * @param builtBy who to mark as builder in the manifest
-   * @param createdBy who to mark as creator in the manifest
-   * @param minSdkVersion minimum SDK version supported
-   * @return the zip file
-   * @throws IOException failed to create the zip file
-   *
-   * @deprecated Use constructor with {@link SigningOptions} instead
-   */
-  @Deprecated
-  public static ZFile apk(
-      File f,
-      ZFileOptions options,
-      @Nullable PrivateKey key,
-      ImmutableList<X509Certificate> certificates,
-      boolean v1SigningEnabled,
-      boolean v2SigningEnabled,
-      @Nullable String builtBy,
-      @Nullable String createdBy,
-      int minSdkVersion)
-      throws IOException {
-    Optional<SigningOptions> signingOptions =
-            key == null ?
-            Optional.absent() :
-            Optional.of(
-                    SigningOptions.builder()
-                            .setKey(key)
-                            .setCertificates(certificates)
-                            .setV1SigningEnabled(v1SigningEnabled)
-                            .setV2SigningEnabled(v2SigningEnabled)
-                            .setMinSdkVersion(minSdkVersion)
-                            .build());
-
-    return apk(f, options, signingOptions, builtBy, createdBy);
-  }
-
-  /**
-   * Creates a new zip file configured as an apk, based on a given file.
-   *
-   * @param f the file, if this path does not represent an existing path, will create a {@link
-   *     ZFile} based on an non-existing path (a zip will be created when {@link ZFile#close()} is
-   *     invoked)
-   * @param options the options to create the {@link ZFile}
    * @param signingOptions the options to sign the apk
    * @param builtBy who to mark as builder in the manifest
    * @param createdBy who to mark as creator in the manifest
    * @return the zip file
    * @throws IOException failed to create the zip file
    */
-  @Deprecated
   public static ZFile apk(
       File f,
       ZFileOptions options,
