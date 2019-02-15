@@ -194,7 +194,7 @@ public class SigningExtension {
     ApkVerifier.Result result;
     try {
       result =
-          new ApkVerifier.Builder(new ZFileDataSource(zFile))
+          new ApkVerifier.Builder(zFile.asDataSource())
               .setMinCheckedPlatformVersion(options.getMinSdkVersion())
               .build()
               .verify();
@@ -358,7 +358,7 @@ public class SigningExtension {
       DataSource eocd = DataSources.asDataSource(ByteBuffer.wrap(eocdBytes));
       long zipEntriesSizeBytes =
           zFile.getCentralDirectoryOffset() - zFile.getExtraDirectoryOffset();
-      DataSource zipEntries = new ZFileDataSource(zFile, 0, zipEntriesSizeBytes);
+      DataSource zipEntries = zFile.asDataSource(0, zipEntriesSizeBytes);
       try {
         addV2SignatureRequest = signer.outputZipSections(zipEntries, centralDir, eocd);
       } catch (NoSuchAlgorithmException

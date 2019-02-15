@@ -16,6 +16,8 @@
 
 package com.android.tools.build.apkzlib.zip;
 
+import com.android.apksig.util.DataSource;
+import com.android.apksig.util.DataSources;
 import com.android.tools.build.apkzlib.bytestorage.ByteStorage;
 import com.android.tools.build.apkzlib.utils.CachedFileContents;
 import com.android.tools.build.apkzlib.utils.IOExceptionFunction;
@@ -563,7 +565,7 @@ public class ZFile implements Closeable {
 
     for (FileUseMapEntry<StoredEntry> mapEntry : this.entries.values()) {
       StoredEntry entry = mapEntry.getStore();
-      assert entry != null;
+      Preconditions.checkNotNull(entry, "Entry at %s is null", mapEntry.getStart());
       entries.put(entry.getCentralDirectoryHeader().getName(), entry);
     }
 
@@ -612,7 +614,7 @@ public class ZFile implements Closeable {
    */
   private void readData() throws IOException {
     Preconditions.checkState(state != ZipFileState.CLOSED, "state == ZipFileState.CLOSED");
-    Preconditions.checkState(raf != null, "raf == null");
+    Preconditions.checkNotNull(raf, "raf == null");
 
     readEocd();
     readCentralDirectory();
@@ -625,7 +627,7 @@ public class ZFile implements Closeable {
 
     if (directoryEntry != null) {
       CentralDirectory directory = directoryEntry.getStore();
-      assert directory != null;
+      Preconditions.checkNotNull(directory, "Central directory is null");
 
       entryEndOffset = 0;
 
@@ -703,7 +705,7 @@ public class ZFile implements Closeable {
        * an existing offset.
        */
       Verify.verifyNotNull(eocdEntry);
-      assert eocdEntry != null;
+      Preconditions.checkNotNull(eocdEntry, "EOCD is null");
       directoryStartOffset = eocdEntry.getStart();
       entryEndOffset = 0;
     }
@@ -724,7 +726,7 @@ public class ZFile implements Closeable {
    */
   private void readEocd() throws IOException {
     Preconditions.checkState(state != ZipFileState.CLOSED, "state == ZipFileState.CLOSED");
-    Preconditions.checkState(raf != null, "raf == null");
+    Preconditions.checkNotNull(raf, "raf == null");
 
     /*
      * Read the last part of the zip into memory. If we don't find the EOCD signature by then,
@@ -839,7 +841,7 @@ public class ZFile implements Closeable {
     Preconditions.checkNotNull(eocdEntry, "eocdEntry == null");
     Preconditions.checkNotNull(eocdEntry.getStore(), "eocdEntry.getStore() == null");
     Preconditions.checkState(state != ZipFileState.CLOSED, "state == ZipFileState.CLOSED");
-    Preconditions.checkState(raf != null, "raf == null");
+    Preconditions.checkNotNull(raf, "raf == null");
     Preconditions.checkState(directoryEntry == null, "directoryEntry != null");
 
     Eocd eocd = eocdEntry.getStore();
@@ -901,7 +903,7 @@ public class ZFile implements Closeable {
    */
   public InputStream directOpen(final long start, final long end) throws IOException {
     Preconditions.checkState(state != ZipFileState.CLOSED, "state == ZipFileState.CLOSED");
-    Preconditions.checkState(raf != null, "raf == null");
+    Preconditions.checkNotNull(raf, "raf == null");
     Preconditions.checkArgument(start >= 0, "start < 0");
     Preconditions.checkArgument(end >= start, "end < start");
     Preconditions.checkArgument(end <= raf.length(), "end > raf.length()");
@@ -1080,7 +1082,7 @@ public class ZFile implements Closeable {
        */
       for (FileUseMapEntry<StoredEntry> entry : new HashSet<>(entries.values())) {
         StoredEntry storedEntry = entry.getStore();
-        assert storedEntry != null;
+        Preconditions.checkNotNull(storedEntry, "Entry at %s is null", entry.getStart());
 
         FileUseMapEntry<?> before = map.before(entry);
         if (before == null || !before.isFree()) {
@@ -1168,7 +1170,7 @@ public class ZFile implements Closeable {
 
     for (FileUseMapEntry<StoredEntry> entry : entries.values()) {
       StoredEntry entryStore = entry.getStore();
-      assert entryStore != null;
+      Preconditions.checkNotNull(entryStore, "Entry at %s is null", entry.getStart());
       if (entryStore.getCentralDirectoryHeader().getOffset() == -1) {
         toWriteToStore.put(entry, entryStore);
       }
@@ -1269,7 +1271,7 @@ public class ZFile implements Closeable {
 
     for (FileUseMapEntry<StoredEntry> entry : entriesByLocation) {
       StoredEntry storedEntry = entry.getStore();
-      assert storedEntry != null;
+      Preconditions.checkNotNull(storedEntry, "Entry at %s is null", entry.getStart());
 
       FileUseMapEntry<?> before = map.before(entry);
       if (before == null || !before.isFree()) {
@@ -1421,7 +1423,7 @@ public class ZFile implements Closeable {
   private void computeCentralDirectory() throws IOException {
     Preconditions.checkState(state == ZipFileState.OPEN_RW, "state != ZipFileState.OPEN_RW");
     Preconditions.checkNotNull(raf, "raf == null");
-    Preconditions.checkState(directoryEntry == null, "directoryEntry == null");
+    Preconditions.checkState(directoryEntry == null, "directoryEntry != null");
 
     Set<StoredEntry> newStored = Sets.newHashSet();
     for (FileUseMapEntry<StoredEntry> mapEntry : entries.values()) {
@@ -1517,7 +1519,8 @@ public class ZFile implements Closeable {
 
     if (directoryEntry != null) {
       CentralDirectory directory = directoryEntry.getStore();
-      assert directory != null;
+
+      Preconditions.checkNotNull(directory, "Central directory is null");
 
       dirStart = directoryEntry.getStart();
       dirSize = directoryEntry.getSize();
@@ -1904,7 +1907,8 @@ public class ZFile implements Closeable {
     final StoredEntry replaceStore;
     if (toReplace != null) {
       replaceStore = toReplace.getStore();
-      assert replaceStore != null;
+      Preconditions.checkNotNull(
+          replaceStore, "File to replace at %s is null", toReplace.getStart());
       replaceStore.delete(false);
     } else {
       replaceStore = null;
@@ -2013,7 +2017,7 @@ public class ZFile implements Closeable {
         long fromCrc = fromEntry.getCentralDirectoryHeader().getCrc32();
 
         StoredEntry currentStore = currentEntry.getStore();
-        assert currentStore != null;
+        Preconditions.checkNotNull(currentStore, "Entry at %s is null", currentEntry.getStart());
 
         long currentSize = currentStore.getCentralDirectoryHeader().getUncompressedSize();
         long currentCrc = currentStore.getCentralDirectoryHeader().getCrc32();
@@ -2308,7 +2312,7 @@ public class ZFile implements Closeable {
     Preconditions.checkArgument(start + count <= data.length, "start + count > data.length");
 
     reopenRw();
-    assert raf != null;
+    Preconditions.checkNotNull(raf, "raf == null");
 
     raf.seek(offset);
     raf.write(data, start, count);
@@ -2337,7 +2341,7 @@ public class ZFile implements Closeable {
      */
     if (raf == null) {
       reopenRw();
-      assert raf != null;
+      Preconditions.checkNotNull(raf, "raf == null");
     }
     return raf.length();
   }
@@ -2384,7 +2388,7 @@ public class ZFile implements Closeable {
      */
     if (raf == null) {
       reopenRw();
-      assert raf != null;
+      Preconditions.checkNotNull(raf, "raf == null");
     }
 
     raf.seek(offset);
@@ -2434,7 +2438,7 @@ public class ZFile implements Closeable {
      */
     if (raf == null) {
       reopenRw();
-      assert raf != null;
+      Preconditions.checkNotNull(raf, "raf == null");
     }
 
     FileChannel fileChannel = raf.getChannel();
@@ -2750,6 +2754,22 @@ public class ZFile implements Closeable {
     return file;
   }
 
+  public DataSource asDataSource() throws IOException {
+    if (raf == null) {
+      reopenRw();
+      Preconditions.checkNotNull(raf, "raf == null");
+    }
+    return DataSources.asDataSource(this.raf);
+  }
+
+  public DataSource asDataSource(long offset, long size) throws IOException {
+    if (raf == null) {
+      reopenRw();
+      Preconditions.checkNotNull(raf, "raf == null");
+    }
+    return DataSources.asDataSource(this.raf, offset, size);
+  }
+
   /**
    * Creates a new verify log.
    *
@@ -2757,7 +2777,7 @@ public class ZFile implements Closeable {
    */
   VerifyLog makeVerifyLog() {
     VerifyLog log = verifyLogFactory.get();
-    assert log != null;
+    Preconditions.checkNotNull(log, "log == null");
     return log;
   }
 
