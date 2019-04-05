@@ -16,12 +16,14 @@
 
 package com.android.tools.build.apkzlib.sign;
 
+import com.android.apksig.util.RunnablesExecutor;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /** A class that contains data to initialize SigningExtension. */
 @AutoValue
@@ -37,6 +39,7 @@ public abstract class SigningOptions {
         public abstract Builder setV2SigningEnabled(boolean enabled);
         public abstract Builder setMinSdkVersion(int version);
         public abstract Builder setValidation(@Nonnull Validation validation);
+        public abstract Builder setExecutor(@Nullable RunnablesExecutor executor);
 
         abstract SigningOptions autoBuild();
 
@@ -77,6 +80,9 @@ public abstract class SigningOptions {
 
     /** Strategy of package signature validation */
     public abstract Validation getValidation();
+
+    @Nullable
+    public abstract RunnablesExecutor getExecutor();
 
     public enum Validation {
         /** Always perform signature validation */

@@ -124,6 +124,9 @@ public class SigningExtension {
             .setV3SigningEnabled(false)
             .setCreatedBy("1.0 (Android)")
             .build();
+    if (opts.getExecutor() != null) {
+      signer.setExecutor(opts.getExecutor());
+    }
     this.options = opts;
   }
 
