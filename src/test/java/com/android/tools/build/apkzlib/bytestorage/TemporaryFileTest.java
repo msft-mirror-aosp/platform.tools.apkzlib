@@ -20,7 +20,7 @@ public class TemporaryFileTest {
     File file = temporaryFolder.newFile();
 
     try (TemporaryFile temporaryFile = new TemporaryFile(file)) {
-      assertThat(temporaryFile.getFile()).isSameInstanceAs(file);
+      assertThat(temporaryFile.getFile()).isSameAs(file);
     }
   }
 
