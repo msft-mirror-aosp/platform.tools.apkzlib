@@ -13,7 +13,10 @@ maven_java_library(
     ],
     pom = ":pom",
     resource_strip_prefix = "tools/apkzlib",
-    visibility = ["//tools/base/build-system:__subpackages__"],
+    visibility = [
+        "//tools/base/build-system:__subpackages__",
+        "//tools/base/zipflinger:__subpackages__",
+    ],
     deps = [
         ":com.google.auto.value_auto-value_neverlink",
         "//tools/base/build-system:tools.apksig",
