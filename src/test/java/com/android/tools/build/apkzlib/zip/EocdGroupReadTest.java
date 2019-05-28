@@ -34,6 +34,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 @RunWith(JUnit4.class)
@@ -50,41 +51,42 @@ public class EocdGroupReadTest {
     zf = Mockito.mock(ZFile.class);
     Mockito.when(zf.getVerifyLog()).thenReturn(Mockito.mock(VerifyLog.class));
     Mockito.doAnswer(
-        (invocation) -> {
-          Object[] args = invocation.getArguments();
-          long offset = (Long) args[0];
-          byte[] bytes = (byte[]) args[1];
+            (invocation) -> {
+              Object[] args = invocation.getArguments();
+              long offset = (Long) args[0];
+              byte[] bytes = (byte[]) args[1];
 
-          if (offset < 0) {
-            throw new IOException("error reading eocd correctly, tried to read before file");
-          }
-          if (offset + bytes.length > getFileSize()) {
-            throw new IOException("error reading eocd correctly, tried to read past file");
-          }
+              if (offset < 0) {
+                throw new IOException("error reading eocd correctly, tried to read before file");
+              }
+              if (offset + bytes.length > getFileSize()) {
+                throw new IOException("error reading eocd correctly, tried to read past file");
+              }
 
-          int currentByteOffset = 0;
+              int currentByteOffset = 0;
 
-          // need to fill the byte array before it hits the eocdRecord.
-          if (offset < eocdRecordOffset) {
-            int emptyReads = Math.min(
-                bytes.length, Ints.checkedCast(eocdRecordOffset - offset));
-            Arrays.fill(bytes, 0, emptyReads, (byte) 0x00);
-            currentByteOffset = emptyReads;
-            offset = 0L;
-          } else {
-            offset -= eocdRecordOffset;
-          }
+              // need to fill the byte array before it hits the eocdRecord.
+              if (offset < eocdRecordOffset) {
+                int emptyReads =
+                    Math.min(bytes.length, Ints.checkedCast(eocdRecordOffset - offset));
+                Arrays.fill(bytes, 0, emptyReads, (byte) 0x00);
+                currentByteOffset = emptyReads;
+                offset = 0L;
+              } else {
+                offset -= eocdRecordOffset;
+              }
 
-          System.arraycopy(
-              eocdRecord,
-              Ints.checkedCast(offset),
-              bytes,
-              currentByteOffset,
-              bytes.length - currentByteOffset);
+              System.arraycopy(
+                  eocdRecord,
+                  Ints.checkedCast(offset),
+                  bytes,
+                  currentByteOffset,
+                  bytes.length - currentByteOffset);
 
-          return null;
-        }
-    ).when(zf).directFullyRead(Mockito.anyLong(), Mockito.any(byte[].class));
+              return null;
+            })
+        .when(zf)
+        .directFullyRead(ArgumentMatchers.anyLong(), ArgumentMatchers.any(byte[].class));
   }
 
   private void setup(
