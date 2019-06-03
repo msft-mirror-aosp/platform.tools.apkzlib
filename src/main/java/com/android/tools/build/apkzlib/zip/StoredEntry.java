@@ -31,9 +31,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Comparator;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -140,7 +138,7 @@ public class StoredEntry {
   private boolean deleted;
 
   /** Extra field specified in the local directory. */
-  @Nonnull private ExtraField localExtra;
+  private ExtraField localExtra;
 
   /** Type of data descriptor associated with the entry. */
   private Supplier<DataDescriptorType> dataDescriptorType;
@@ -164,7 +162,6 @@ public class StoredEntry {
    * @param file the zip file containing the entry
    * @param source the entry's data source; it can be {@code null} only if the source can be read
    *     from the zip file, that is, if {@code header.getOffset()} is non-negative
-   * @param storage the storage used to generate sources with entry data
    * @throws IOException failed to create the entry
    */
   StoredEntry(
@@ -179,12 +176,8 @@ public class StoredEntry {
     verifyLog = file.makeVerifyLog();
     this.storage = storage;
 
-    if (cdh.getOffset() >= 0) {
-      if (file.getSkipValidation()) {
-        localExtra = cdh.getExtraField();
-      } else {
-        readLocalHeader();
-      }
+    if (header.getOffset() >= 0) {
+      readLocalHeader();
 
       Preconditions.checkArgument(
           source == null, "Source was defined but contents already exist on file.");
@@ -197,9 +190,9 @@ public class StoredEntry {
       this.source = createSourceFromZip(cdh.getOffset());
     } else {
       /*
-       * Make local extra data match extra field from the central directory
+       * There is no local extra data for new files.
        */
-      localExtra = cdh.getExtraField();
+      localExtra = new ExtraField();
 
       Preconditions.checkNotNull(source, "Source was not defined, but contents are not on file.");
       this.source = source;
@@ -439,14 +432,6 @@ public class StoredEntry {
     byte[] localExtraRaw = new byte[Ints.checkedCast(extraLength)];
     file.directFullyRead(localExtraStart, localExtraRaw);
     localExtra = new ExtraField(localExtraRaw);
-    byte[] cdhExtraField = new byte[cdh.getExtraField().size()];
-    cdh.getExtraField().write(ByteBuffer.wrap(cdhExtraField));
-    if (!Arrays.equals(localExtraRaw, cdhExtraField)) {
-      verifyLog.log(
-          String.format(
-              "Central directory and local header extra fields for file '%s' do not match",
-              fileName));
-    }
   }
 
   /**
@@ -729,7 +714,6 @@ public class StoredEntry {
    *
    * @return the contents of the local extra field
    */
-  @Nonnull
   public ExtraField getLocalExtra() {
     return localExtra;
   }
@@ -740,7 +724,7 @@ public class StoredEntry {
    * @param localExtra the contents of the local extra field
    * @throws IOException failed to update the zip file
    */
-  public void setLocalExtra(@Nonnull ExtraField localExtra) throws IOException {
+  public void setLocalExtra(ExtraField localExtra) throws IOException {
     boolean resized = setLocalExtraNoNotify(localExtra);
     file.localHeaderChanged(this, resized);
   }
@@ -754,7 +738,7 @@ public class StoredEntry {
    * @return has the local header size changed?
    * @throws IOException failed to load the file
    */
-  boolean setLocalExtraNoNotify(@Nonnull ExtraField localExtra) throws IOException {
+  boolean setLocalExtraNoNotify(ExtraField localExtra) throws IOException {
     boolean sizeChanged;
 
     /*
@@ -777,7 +761,6 @@ public class StoredEntry {
     }
 
     this.localExtra = localExtra;
-    cdh.setExtraField(localExtra);
     return sizeChanged;
   }
 
