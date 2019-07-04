@@ -2507,8 +2507,7 @@ public class ZFile implements Closeable {
      * zip in the root. However, if file.isDirectory() we won't add it and add its children.
      */
     if (file.isFile()) {
-      boolean mayCompressFile =
-          Verify.verifyNotNull(mayCompress.apply(file), "mayCompress.apply() returned null");
+      boolean mayCompressFile = mayCompress.apply(file);
 
       try (Closer closer = Closer.create()) {
         FileInputStream fileInput = closer.register(new FileInputStream(file));
