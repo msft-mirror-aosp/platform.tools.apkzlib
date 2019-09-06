@@ -68,6 +68,7 @@ java_plugin(
     processor_class = "com.google.auto.value.processor.AutoValueProcessor",
     deps = [
         "//tools/base/third_party:com.google.auto.value_auto-value",
+        "//tools/base/third_party:com.google.auto.value_auto-value-annotations",
     ],
 )
 
@@ -75,5 +76,8 @@ java_plugin(
 java_library(
     name = "com.google.auto.value_auto-value_neverlink",
     neverlink = 1,
-    exports = ["//tools/base/third_party:com.google.auto.value_auto-value"],
+    exports = [
+        "//tools/base/third_party:com.google.auto.value_auto-value",
+        "//tools/base/third_party:com.google.auto.value_auto-value-annotations",
+    ],
 )
