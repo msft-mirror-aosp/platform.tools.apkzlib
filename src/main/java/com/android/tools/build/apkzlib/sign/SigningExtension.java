@@ -32,6 +32,7 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.primitives.Bytes;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -260,8 +261,7 @@ public class SigningExtension {
     }
   }
 
-  private void copyStreamToDataSink(InputStream inputStream, DataSink dataSink)
-          throws IOException {
+  private void copyStreamToDataSink(InputStream inputStream, DataSink dataSink) throws IOException {
     int bytesRead;
     byte[] buffer = digestBuffer.get();
     while ((bytesRead = inputStream.read(buffer)) > 0) {
@@ -349,7 +349,7 @@ public class SigningExtension {
     byte[] apkSigningBlock;
     byte[] centralDirBytes = zFile.getCentralDirectoryBytes();
     byte[] eocdBytes = zFile.getEocdBytes();
-    ApkSignerEngine.OutputApkSigningBlockRequest addV2SignatureRequest;
+    ApkSignerEngine.OutputApkSigningBlockRequest2 addV2SignatureRequest;
     // This event may arrive a second time -- after we write out the APK Signing Block. Thus, we
     // cache the block to speed things up. The cached block is invalidated by any changes to the
     // file (as reported to this extension).
@@ -363,7 +363,7 @@ public class SigningExtension {
           zFile.getCentralDirectoryOffset() - zFile.getExtraDirectoryOffset();
       DataSource zipEntries = zFile.asDataSource(0, zipEntriesSizeBytes);
       try {
-        addV2SignatureRequest = signer.outputZipSections(zipEntries, centralDir, eocd);
+        addV2SignatureRequest = signer.outputZipSections2(zipEntries, centralDir, eocd);
       } catch (NoSuchAlgorithmException
           | InvalidKeyException
           | SignatureException
@@ -371,10 +371,15 @@ public class SigningExtension {
           | IOException e) {
         throw new IOException("Failed to generate v2 signature", e);
       }
-      apkSigningBlock =
-          (addV2SignatureRequest != null)
-              ? addV2SignatureRequest.getApkSigningBlock()
-              : new byte[0];
+
+      if (addV2SignatureRequest != null) {
+        apkSigningBlock =
+            Bytes.concat(
+                new byte[addV2SignatureRequest.getPaddingSizeBeforeApkSigningBlock()],
+                addV2SignatureRequest.getApkSigningBlock());
+      } else {
+        apkSigningBlock = new byte[0];
+      }
       cachedApkSigningBlock = apkSigningBlock;
     }
 
