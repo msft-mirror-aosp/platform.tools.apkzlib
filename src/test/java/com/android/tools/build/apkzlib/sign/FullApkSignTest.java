@@ -16,6 +16,7 @@
 
 package com.android.tools.build.apkzlib.sign;
 
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -32,8 +33,10 @@ import com.android.tools.build.apkzlib.zip.ZFileOptions;
 import com.android.tools.build.apkzlib.zip.ZFileTestConstants;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import org.junit.Rule;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.FromDataPoints;
@@ -46,13 +49,22 @@ import org.junit.runner.RunWith;
 @RunWith(Theories.class)
 public class FullApkSignTest {
 
+  /** Size of the apk signing block size is encoded in 8 bytes. */
+  private static final int SIGNING_BLOCK_SIZE_SIZE = 8;
+
+  /** Size of the signing block magic bytes. */
+  private static final int MAGIC_BYTES_SIZE = 16;
+
   private static final String F1_NAME = "abc";
-
-  private static final byte[] F1_DATA = new byte[] {1, 1, 1, 1};
-
   private static final String F2_NAME = "defg";
 
-  private static final byte[] F2_DATA = new byte[] {2, 2, 2, 2, 3, 3, 3, 3};
+  private static final byte[] F2_DATA = new byte[10000];
+  private static final byte[] F1_DATA = new byte[20000];
+
+  static {
+    Arrays.fill(F1_DATA, (byte) 1);
+    Arrays.fill(F2_DATA, (byte) 3);
+  }
 
   /** Folder used for tests. */
   @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -75,15 +87,15 @@ public class FullApkSignTest {
      */
     SigningOptions signingOptions =
         SigningOptions.builder()
-                .setKey(signData.v1)
-                .setCertificates(signData.v2)
-                .setV2SigningEnabled(true)
-                .setMinSdkVersion(13)
-                .build();
+            .setKey(signData.v1)
+            .setCertificates(signData.v2)
+            .setV2SigningEnabled(true)
+            .setMinSdkVersion(13)
+            .build();
     try (ZFile zf = ZFile.openReadWrite(file, options)) {
       new SigningExtension(signingOptions).register(zf);
-      zf.add(F1_NAME, new ByteArrayInputStream(F1_DATA));
-      zf.add(F2_NAME, new ByteArrayInputStream(F2_DATA));
+      zf.add(F1_NAME, new ByteArrayInputStream(F1_DATA), /* mayCompress= */ false);
+      zf.add(F2_NAME, new ByteArrayInputStream(F2_DATA), /* mayCompress= */ false);
     }
   }
 
@@ -134,7 +146,7 @@ public class FullApkSignTest {
     byte[] signatureBlock;
     try (ZFile zf = ZFile.openReadWrite(out)) {
       long signBlockEnd = zf.getCentralDirectoryOffset();
-      long signBlockStart = zf.getExtraDirectoryOffset();
+      long signBlockStart = zf.getCentralDirectoryOffset() - zf.getExtraDirectoryOffset();
       assertTrue(signBlockEnd > signBlockStart);
       signatureBlock = new byte[(int) (signBlockEnd - signBlockStart)];
       zf.directRead(signBlockStart, signatureBlock, 0, signatureBlock.length);
@@ -145,12 +157,12 @@ public class FullApkSignTest {
 
     /* Resign the zip. */
     SigningOptions signingOptions =
-            SigningOptions.builder()
-                    .setKey(newSigningData.v1)
-                    .setCertificates(newSigningData.v2)
-                    .setV2SigningEnabled(true)
-                    .setMinSdkVersion(13)
-                    .build();
+        SigningOptions.builder()
+            .setKey(newSigningData.v1)
+            .setCertificates(newSigningData.v2)
+            .setV2SigningEnabled(true)
+            .setMinSdkVersion(13)
+            .build();
     try (ZFile zf = ZFile.openReadWrite(out)) {
       new SigningExtension(signingOptions).register(zf);
     }
@@ -160,7 +172,7 @@ public class FullApkSignTest {
     byte[] newSignatureBlock;
     try (ZFile zf = ZFile.openReadWrite(out)) {
       long signBlockEnd = zf.getCentralDirectoryOffset();
-      long signBlockStart = zf.getExtraDirectoryOffset();
+      long signBlockStart = zf.getCentralDirectoryOffset() - zf.getExtraDirectoryOffset();
       assertTrue(signBlockEnd > signBlockStart);
       assertEquals(signBlockEnd - signBlockStart, signatureBlock.length);
       newSignatureBlock = new byte[signatureBlock.length];
@@ -168,5 +180,30 @@ public class FullApkSignTest {
       assertNotEquals(signatureBlock, newSignatureBlock);
     }
   }
-}
 
+  @Theory
+  public void signingBlockAndCentralDirectoryAre4KAligned(
+      @FromDataPoints("signing_data") ApkZLibPair<PrivateKey, X509Certificate> signingData)
+      throws Exception {
+    File out = new File(temporaryFolder.getRoot(), "apk");
+    generateSignedZip(out, signingData);
+
+    try (ZFile apk = ZFile.openReadOnly(out)) {
+      long cdOffset = apk.getCentralDirectoryOffset();
+      assertEquals(0, cdOffset % 4096);
+
+      // Find the actual start of the signing block, i.e. without the padding that makes it
+      // 4k-aligned.
+      ByteBuffer buffer = ByteBuffer.allocate(SIGNING_BLOCK_SIZE_SIZE).order(LITTLE_ENDIAN);
+      apk.directRead(
+          cdOffset - MAGIC_BYTES_SIZE - SIGNING_BLOCK_SIZE_SIZE,
+          buffer.array(),
+          0,
+          SIGNING_BLOCK_SIZE_SIZE);
+      long actualSigningBlockSize = buffer.getLong();
+      long actualSigningBlockStart = cdOffset - actualSigningBlockSize - SIGNING_BLOCK_SIZE_SIZE;
+
+      assertEquals(0, actualSigningBlockStart % 4096);
+    }
+  }
+}
