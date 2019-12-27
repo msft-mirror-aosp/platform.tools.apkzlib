@@ -40,6 +40,7 @@ java_library(
     resources = glob(["src/test/resources/**"]),
     deps = [
         ":apkzlib",
+        "//tools/base/build-system:tools.apksig",
         "//tools/base/testutils:tools.testutils",
         "//tools/base/third_party:com.google.guava_guava",
         "//tools/base/third_party:com.google.truth_truth",
