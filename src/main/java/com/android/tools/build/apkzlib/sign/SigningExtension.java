@@ -19,10 +19,12 @@ import com.android.apksig.ApkSignerEngine;
 import com.android.apksig.ApkVerifier;
 import com.android.apksig.DefaultApkSignerEngine;
 import com.android.apksig.apk.ApkFormatException;
+import com.android.apksig.internal.apk.ApkSigningBlockUtils;
 import com.android.apksig.util.DataSink;
 import com.android.apksig.util.DataSource;
 import com.android.apksig.util.DataSources;
 import com.android.tools.build.apkzlib.utils.IOExceptionRunnable;
+import com.android.tools.build.apkzlib.utils.SigningBlockUtils;
 import com.android.tools.build.apkzlib.zip.StoredEntry;
 import com.android.tools.build.apkzlib.zip.ZFile;
 import com.android.tools.build.apkzlib.zip.ZFileExtension;
@@ -86,6 +88,12 @@ public class SigningExtension {
   /** Names of APK entries which have been processed by {@link #signer}. */
   private final Set<String> signerProcessedOutputEntryNames = new HashSet<>();
 
+  /** Signing block Id for SDK dependency block. */
+  static final int DEPENDENCY_INFO_BLOCK_ID = 0x504b4453;
+
+  /** SDK dependencies of the APK */
+  @Nullable private byte[] sdkDependencyData;
+
   /**
    * Cached contents of the most recently output APK Signing Block or {@code null} if the block
    * hasn't yet been output.
@@ -125,6 +133,9 @@ public class SigningExtension {
             .setV3SigningEnabled(false)
             .setCreatedBy("1.0 (Android)")
             .build();
+    if (opts.getSdkDependencyData() != null) {
+      sdkDependencyData = opts.getSdkDependencyData();
+    }
     if (opts.getExecutor() != null) {
       signer.setExecutor(opts.getExecutor());
     }
@@ -373,12 +384,28 @@ public class SigningExtension {
       }
 
       if (addV2SignatureRequest != null) {
+        apkSigningBlock = addV2SignatureRequest.getApkSigningBlock();
+        if (sdkDependencyData != null) {
+          apkSigningBlock =
+              SigningBlockUtils.addToSigningBlock(
+                  apkSigningBlock, sdkDependencyData, DEPENDENCY_INFO_BLOCK_ID);
+        }
         apkSigningBlock =
             Bytes.concat(
                 new byte[addV2SignatureRequest.getPaddingSizeBeforeApkSigningBlock()],
-                addV2SignatureRequest.getApkSigningBlock());
+                apkSigningBlock);
       } else {
         apkSigningBlock = new byte[0];
+        if (sdkDependencyData != null) {
+          apkSigningBlock =
+              SigningBlockUtils.addToSigningBlock(
+                  apkSigningBlock, sdkDependencyData, DEPENDENCY_INFO_BLOCK_ID);
+          int paddingSize =
+              ApkSigningBlockUtils.generateApkSigningBlockPadding(
+                      zipEntries, /* apkSigningBlockPaddingSupported */ true)
+                  .getSecond();
+          apkSigningBlock = Bytes.concat(new byte[paddingSize], apkSigningBlock);
+        }
       }
       cachedApkSigningBlock = apkSigningBlock;
     }
