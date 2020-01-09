@@ -16,6 +16,7 @@
 
 package com.android.tools.build.apkzlib.sign;
 
+import static com.android.tools.build.apkzlib.sign.SigningExtension.DEPENDENCY_INFO_BLOCK_ID;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -52,6 +53,9 @@ public class FullApkSignTest {
   /** Size of the apk signing block size is encoded in 8 bytes. */
   private static final int SIGNING_BLOCK_SIZE_SIZE = 8;
 
+  /** Block IDs in apk signing block are encoded in 4 bytes. */
+  private static final int BLOCK_ID_SIZE = 4;
+
   /** Size of the signing block magic bytes. */
   private static final int MAGIC_BYTES_SIZE = 16;
 
@@ -60,10 +64,12 @@ public class FullApkSignTest {
 
   private static final byte[] F2_DATA = new byte[10000];
   private static final byte[] F1_DATA = new byte[20000];
+  private static final byte[] DEPENDENCY_BLOCK_VALUE = new byte[500];
 
   static {
     Arrays.fill(F1_DATA, (byte) 1);
     Arrays.fill(F2_DATA, (byte) 3);
+    Arrays.fill(DEPENDENCY_BLOCK_VALUE, (byte) 4);
   }
 
   /** Folder used for tests. */
@@ -91,6 +97,7 @@ public class FullApkSignTest {
             .setCertificates(signData.v2)
             .setV2SigningEnabled(true)
             .setMinSdkVersion(13)
+            .setSdkDependencyData(DEPENDENCY_BLOCK_VALUE)
             .build();
     try (ZFile zf = ZFile.openReadWrite(file, options)) {
       new SigningExtension(signingOptions).register(zf);
@@ -204,6 +211,48 @@ public class FullApkSignTest {
       long actualSigningBlockStart = cdOffset - actualSigningBlockSize - SIGNING_BLOCK_SIZE_SIZE;
 
       assertEquals(0, actualSigningBlockStart % 4096);
+    }
+  }
+
+  @Theory
+  public void dependencyInfoBlockPresent(
+      @FromDataPoints("signing_data") ApkZLibPair<PrivateKey, X509Certificate> signingData)
+      throws Exception {
+    File out = new File(temporaryFolder.getRoot(), "apk");
+    generateSignedZip(out, signingData);
+
+    try (ZFile apk = ZFile.openReadOnly(out)) {
+      long cdOffset = apk.getCentralDirectoryOffset();
+
+      // Find the actual start of the signing block, i.e. without the padding that makes it
+      // 4k-aligned.
+      ByteBuffer buffer = ByteBuffer.allocate(SIGNING_BLOCK_SIZE_SIZE).order(LITTLE_ENDIAN);
+      apk.directRead(
+          cdOffset - MAGIC_BYTES_SIZE - SIGNING_BLOCK_SIZE_SIZE,
+          buffer.array(),
+          0,
+          SIGNING_BLOCK_SIZE_SIZE);
+      long actualSigningBlockSize = buffer.getLong();
+      long actualSigningBlockStart = cdOffset - actualSigningBlockSize - SIGNING_BLOCK_SIZE_SIZE;
+
+      ByteBuffer signingBlock =
+          ByteBuffer.allocate((int) actualSigningBlockSize).order(LITTLE_ENDIAN);
+      apk.directRead(
+          actualSigningBlockStart + SIGNING_BLOCK_SIZE_SIZE,
+          signingBlock.array(),
+          0,
+          (int) actualSigningBlockSize);
+
+      signingBlock.get(new byte[(int) signingBlock.getLong()]); // Id + value of signature
+      assertEquals(
+          signingBlock.getLong(),
+          DEPENDENCY_BLOCK_VALUE.length + BLOCK_ID_SIZE); // length of Dependency Info block
+      assertEquals(DEPENDENCY_INFO_BLOCK_ID, signingBlock.getInt()); // Dependency Info block Id
+
+      byte[] dependencyInfoPresent = new byte[DEPENDENCY_BLOCK_VALUE.length];
+      signingBlock.get(dependencyInfoPresent);
+      assertArrayEquals(
+          dependencyInfoPresent, DEPENDENCY_BLOCK_VALUE); // Dependency Info block value
     }
   }
 }
