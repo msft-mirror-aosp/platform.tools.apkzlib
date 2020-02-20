@@ -20,6 +20,7 @@ import static com.android.tools.build.apkzlib.utils.SigningBlockUtils.ANDROID_CO
 import static com.android.tools.build.apkzlib.utils.SigningBlockUtils.BLOCK_ID_NUM_BYTES;
 import static com.android.tools.build.apkzlib.utils.SigningBlockUtils.SIZE_OF_BLOCK_NUM_BYTES;
 import static com.android.tools.build.apkzlib.utils.SigningBlockUtils.VERITY_PADDING_BLOCK_ID;
+import static com.google.common.truth.Truth.assertThat;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -27,6 +28,7 @@ import static org.junit.Assert.assertEquals;
 import com.android.apksig.internal.apk.ApkSigningBlockUtils;
 import com.android.apksig.internal.util.Pair;
 import com.google.common.collect.ImmutableList;
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Random;
 import org.junit.Test;
@@ -42,6 +44,7 @@ public class SigningBlockUtilsTest {
   private static final int APK_SIGNATURE_SCHEME_V2_BLOCK_ID = 0x7109871a;
   private static final long APK_SIG_BLOCK_MAGIC_HI = 0x3234206b636f6c42L;
   private static final long APK_SIG_BLOCK_MAGIC_LO = 0x20676953204b5041L;
+  private static final int DEPENDENCY_INFO_BLOCK_ID = 0x504b4453;
 
   @Test
   public void testEmptyBlock() throws Exception {
@@ -113,6 +116,21 @@ public class SigningBlockUtilsTest {
 
     // No signing block. Verify new block and Padding block
     verifyNewBlockAndPaddingBlock(newBlockValue, expectedLengthPrefix, result);
+  }
+
+  @Test
+  public void testExtractBlock_present() throws Exception {
+    File apkWithDependencyBlock =
+        ApkZFileTestUtils.getResource("packaging/withSdkDependencyBlock.apk");
+    assertThat(SigningBlockUtils.extractBlock(apkWithDependencyBlock, DEPENDENCY_INFO_BLOCK_ID))
+        .isNotNull();
+  }
+
+  @Test
+  public void testExtractBlock_absent() throws Exception {
+    File apkWithDependencyBlock = ApkZFileTestUtils.getResource("packaging/v2-signed.apk");
+    assertThat(SigningBlockUtils.extractBlock(apkWithDependencyBlock, DEPENDENCY_INFO_BLOCK_ID))
+        .isNull();
   }
 
   private static void verifyBlocks(
