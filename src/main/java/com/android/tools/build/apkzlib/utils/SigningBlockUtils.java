@@ -149,10 +149,7 @@ public final class SigningBlockUtils {
   @Nullable
   public static ByteBuffer extractBlock(File apk, int blockId)
       throws IOException, ZipFormatException, ApkSigningBlockNotFoundException {
-    DataSource apkDataSource = DataSources.asDataSource(new RandomAccessFile(apk, "r"));
-    ApkSigningBlock signingBlockInfo =
-        ApkUtils.findApkSigningBlock(apkDataSource, ApkUtils.findZipSections(apkDataSource));
-
+    ApkSigningBlock signingBlockInfo = signingBlockFrom(apk);
     DataSource wholeV2Block = signingBlockInfo.getContents();
     final int lengthAndIdByteCount = BLOCK_LENGTH_NUM_BYTES + BLOCK_ID_NUM_BYTES;
     DataSource signingBlock =
@@ -176,6 +173,14 @@ public final class SigningBlockUtils {
       index += blockLength + BLOCK_LENGTH_NUM_BYTES;
     }
     return null;
+  }
+
+  private static ApkSigningBlock signingBlockFrom(File apk)
+      throws IOException, ZipFormatException, ApkSigningBlockNotFoundException {
+    try (RandomAccessFile randomAccess = new RandomAccessFile(apk, "r")) {
+      DataSource apkDataSource = DataSources.asDataSource(randomAccess);
+      return ApkUtils.findApkSigningBlock(apkDataSource, ApkUtils.findZipSections(apkDataSource));
+    }
   }
 
   private SigningBlockUtils() {}
