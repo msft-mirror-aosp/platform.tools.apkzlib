@@ -27,5 +27,4 @@ project.ext.pomName = 'Android APK Zip Library'
 project.ext.pomDesc = 'Library used to incrementally build and sign APKs'
 
 apply from: "$rootDir/buildSrc/base/publish.gradle"
-apply from: "$rootDir/buildSrc/base/bintray.gradle"
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"
