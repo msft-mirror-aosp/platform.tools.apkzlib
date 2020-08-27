@@ -1,4 +1,5 @@
-apply from: "$rootDir/buildSrc/base/baseJava.gradle"
+apply plugin: 'com.android.tools.java-library'
+apply plugin: 'com.android.tools.publish'
 
 dependencies {
     compileOnly libs.auto_value
@@ -25,6 +26,3 @@ version = rootProject.ext.buildVersion
 
 project.ext.pomName = 'Android APK Zip Library'
 project.ext.pomDesc = 'Library used to incrementally build and sign APKs'
-
-apply from: "$rootDir/buildSrc/base/publish.gradle"
-apply from: "$rootDir/buildSrc/base/javadoc.gradle"
