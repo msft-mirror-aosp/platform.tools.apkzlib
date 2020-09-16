@@ -16,6 +16,7 @@
 
 package com.android.tools.build.apkzlib.zip;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -24,7 +25,6 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import com.android.tools.build.apkzlib.utils.CachedFileContents;
-import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closer;
@@ -65,7 +65,7 @@ public class ZipMergeTest {
       ByteArrayOutputStream e1BytesOut = new ByteArrayOutputStream();
       ByteStreams.copy(e1.open(), e1BytesOut);
       byte[] e1Bytes = e1BytesOut.toByteArray();
-      String e1Txt = new String(e1Bytes, Charsets.US_ASCII);
+      String e1Txt = new String(e1Bytes, US_ASCII);
       assertEquals("inside", e1Txt);
 
       StoredEntry e2 = mergedZf.get("file.txt");
@@ -74,7 +74,7 @@ public class ZipMergeTest {
       ByteArrayOutputStream e2BytesOut = new ByteArrayOutputStream();
       ByteStreams.copy(e2.open(), e2BytesOut);
       byte[] e2Bytes = e2BytesOut.toByteArray();
-      String e2Txt = new String(e2Bytes, Charsets.US_ASCII);
+      String e2Txt = new String(e2Bytes, US_ASCII);
       assertEquals("file with more text to allow deflating to be useful", e2Txt);
 
       changeDetector = new CachedFileContents<>(merged);

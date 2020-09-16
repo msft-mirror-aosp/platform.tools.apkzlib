@@ -18,6 +18,7 @@ package com.android.tools.build.apkzlib.zip;
 
 import static com.android.tools.build.apkzlib.utils.ApkZFileTestUtils.readSegment;
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -36,7 +37,6 @@ import com.android.tools.build.apkzlib.bytestorage.InMemoryByteStorageFactory;
 import com.android.tools.build.apkzlib.zip.compress.DeflateExecutionCompressor;
 import com.android.tools.build.apkzlib.zip.utils.CloseableByteSource;
 import com.android.tools.build.apkzlib.zip.utils.RandomAccessFileUtils;
-import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
@@ -140,7 +140,7 @@ public class ZFileTest {
       ByteArrayOutputStream e1BytesOut = new ByteArrayOutputStream();
       ByteStreams.copy(e1.open(), e1BytesOut);
       byte[] e1Bytes = e1BytesOut.toByteArray();
-      String e1Txt = new String(e1Bytes, Charsets.US_ASCII);
+      String e1Txt = new String(e1Bytes, US_ASCII);
       assertEquals("inside", e1Txt);
 
       StoredEntry e2 = azf.get("file.txt");
@@ -149,7 +149,7 @@ public class ZFileTest {
       ByteArrayOutputStream e2BytesOut = new ByteArrayOutputStream();
       ByteStreams.copy(e2.open(), e2BytesOut);
       byte[] e2Bytes = e2BytesOut.toByteArray();
-      String e2Txt = new String(e2Bytes, Charsets.US_ASCII);
+      String e2Txt = new String(e2Bytes, US_ASCII);
       assertEquals("file with more text to allow deflating to be useful", e2Txt);
     }
   }
@@ -621,7 +621,7 @@ public class ZFileTest {
   public void addFileRecursively() throws Exception {
     File tdir = temporaryFolder.newFolder();
     File tfile = new File(tdir, "blah-blah");
-    Files.asCharSink(tfile, Charsets.US_ASCII).write("blah");
+    Files.asCharSink(tfile, US_ASCII).write("blah");
 
     File zip = new File(tdir, "f.zip");
     try (ZFile zf = ZFile.openReadWrite(zip)) {
@@ -629,7 +629,7 @@ public class ZFileTest {
 
       StoredEntry blahEntry = zf.get("blah-blah");
       assertNotNull(blahEntry);
-      String contents = new String(blahEntry.read(), Charsets.US_ASCII);
+      String contents = new String(blahEntry.read(), US_ASCII);
       assertEquals("blah", contents);
     }
   }
@@ -641,8 +641,8 @@ public class ZFileTest {
     String boom = Strings.repeat("BOOM!", 100);
     String kaboom = Strings.repeat("KABOOM!", 100);
 
-    Files.asCharSink(new File(tdir, "danger"), Charsets.US_ASCII).write(boom);
-    Files.asCharSink(new File(tdir, "do not touch"), Charsets.US_ASCII).write(kaboom);
+    Files.asCharSink(new File(tdir, "danger"), US_ASCII).write(boom);
+    Files.asCharSink(new File(tdir, "do not touch"), US_ASCII).write(kaboom);
     File safeDir = new File(tdir, "safe");
     assertTrue(safeDir.mkdir());
 
@@ -659,9 +659,9 @@ public class ZFileTest {
             + "Quisque tristique ac velit sed auctor. Nulla lacus diam, tristique id sem non, "
             + "pellentesque commodo mauris.";
 
-    Files.asCharSink(new File(safeDir, "eat.sweet"), Charsets.US_ASCII).write(iLoveChocolate);
-    Files.asCharSink(new File(safeDir, "eat.fruit"), Charsets.US_ASCII).write(iLoveOrange);
-    Files.asCharSink(new File(safeDir, "bedtime.reading.txt"), Charsets.US_ASCII).write(loremIpsum);
+    Files.asCharSink(new File(safeDir, "eat.sweet"), US_ASCII).write(iLoveChocolate);
+    Files.asCharSink(new File(safeDir, "eat.fruit"), US_ASCII).write(iLoveOrange);
+    Files.asCharSink(new File(safeDir, "bedtime.reading.txt"), US_ASCII).write(loremIpsum);
 
     File zip = new File(tdir, "f.zip");
     try (ZFile zf = ZFile.openReadWrite(zip)) {
@@ -674,14 +674,14 @@ public class ZFileTest {
       assertEquals(
           CompressionMethod.DEFLATE,
           boomEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
-      assertEquals(boom, new String(boomEntry.read(), Charsets.US_ASCII));
+      assertEquals(boom, new String(boomEntry.read(), US_ASCII));
 
       StoredEntry kaboomEntry = zf.get("do not touch");
       assertNotNull(kaboomEntry);
       assertEquals(
           CompressionMethod.DEFLATE,
           kaboomEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
-      assertEquals(kaboom, new String(kaboomEntry.read(), Charsets.US_ASCII));
+      assertEquals(kaboom, new String(kaboomEntry.read(), US_ASCII));
 
       StoredEntry safeEntry = zf.get("safe/");
       assertNotNull(safeEntry);
@@ -692,21 +692,21 @@ public class ZFileTest {
       assertEquals(
           CompressionMethod.STORE,
           choc.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
-      assertEquals(iLoveChocolate, new String(choc.read(), Charsets.US_ASCII));
+      assertEquals(iLoveChocolate, new String(choc.read(), US_ASCII));
 
       StoredEntry orangeEntry = zf.get("safe/eat.fruit");
       assertNotNull(orangeEntry);
       assertEquals(
           CompressionMethod.STORE,
           orangeEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
-      assertEquals(iLoveOrange, new String(orangeEntry.read(), Charsets.US_ASCII));
+      assertEquals(iLoveOrange, new String(orangeEntry.read(), US_ASCII));
 
       StoredEntry loremEntry = zf.get("safe/bedtime.reading.txt");
       assertNotNull(loremEntry);
       assertEquals(
           CompressionMethod.DEFLATE,
           loremEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
-      assertEquals(loremIpsum, new String(loremEntry.read(), Charsets.US_ASCII));
+      assertEquals(loremIpsum, new String(loremEntry.read(), US_ASCII));
     }
   }
 
@@ -988,7 +988,7 @@ public class ZFileTest {
 
       assertEquals(
           filetMignonKorean + " " + isGoodJapanese, entry.getCentralDirectoryHeader().getName());
-      assertArrayEquals("Stuff about food is good.\n".getBytes(Charsets.US_ASCII), entry.read());
+      assertArrayEquals("Stuff about food is good.\n".getBytes(US_ASCII), entry.read());
     }
   }
 
@@ -1011,7 +1011,7 @@ public class ZFileTest {
 
       assertEquals(
           filetMignonKorean + " " + isGoodJapanese, entry.getCentralDirectoryHeader().getName());
-      assertArrayEquals("Stuff about food is good.\n".getBytes(Charsets.US_ASCII), entry.read());
+      assertArrayEquals("Stuff about food is good.\n".getBytes(US_ASCII), entry.read());
     }
   }
 
@@ -1072,7 +1072,7 @@ public class ZFileTest {
     try (RandomAccessFile raf = new RandomAccessFile(zipFile, "rw")) {
 
       raf.seek(500);
-      byte[] dummyData = "Dummy".getBytes(Charsets.US_ASCII);
+      byte[] dummyData = "Dummy".getBytes(US_ASCII);
       raf.write(dummyData);
     }
 

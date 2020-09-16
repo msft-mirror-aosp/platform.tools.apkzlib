@@ -16,6 +16,7 @@
 
 package com.android.tools.build.apkzlib.sign;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -24,7 +25,6 @@ import com.android.tools.build.apkzlib.utils.ApkZFileTestUtils;
 import com.android.tools.build.apkzlib.utils.ApkZLibPair;
 import com.android.tools.build.apkzlib.zip.StoredEntry;
 import com.android.tools.build.apkzlib.zip.ZFile;
-import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import java.io.ByteArrayInputStream;
@@ -112,8 +112,7 @@ public class JarSigningTest {
 
     try (ZFile zf1 = ZFile.openReadWrite(zipFile)) {
       ApkZFileTestUtils.addAndroidManifest(zf1);
-      zf1.add(
-          "directory/file", new ByteArrayInputStream("useless text".getBytes(Charsets.US_ASCII)));
+      zf1.add("directory/file", new ByteArrayInputStream("useless text".getBytes(US_ASCII)));
     }
 
     try (ZFile zf2 = ZFile.openReadWrite(zipFile)) {
@@ -216,7 +215,7 @@ public class JarSigningTest {
       throws Exception {
     File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
 
-    byte[] file1Contents = "I am a test file".getBytes(Charsets.US_ASCII);
+    byte[] file1Contents = "I am a test file".getBytes(US_ASCII);
     String file1Name = "path/to/file1";
     byte[] file1Sha = Hashing.sha256().hashBytes(file1Contents).asBytes();
     String file1ShaTxt = Base64.getEncoder().encodeToString(file1Sha);
@@ -249,7 +248,7 @@ public class JarSigningTest {
       /*
        * Change the file without closing the zip.
        */
-      file1Contents = "I am a modified test file".getBytes(Charsets.US_ASCII);
+      file1Contents = "I am a modified test file".getBytes(US_ASCII);
       file1Sha = Hashing.sha256().hashBytes(file1Contents).asBytes();
       file1ShaTxt = Base64.getEncoder().encodeToString(file1Sha);
 
@@ -274,7 +273,7 @@ public class JarSigningTest {
     /*
      * Change the file closing the zip.
      */
-    file1Contents = "I have changed again!".getBytes(Charsets.US_ASCII);
+    file1Contents = "I have changed again!".getBytes(US_ASCII);
     file1Sha = Hashing.sha256().hashBytes(file1Contents).asBytes();
     file1ShaTxt = Base64.getEncoder().encodeToString(file1Sha);
 
@@ -310,7 +309,7 @@ public class JarSigningTest {
     File zipFile = new File(temporaryFolder.getRoot(), "a.zip");
 
     String fileName = "file";
-    byte[] fileContents = "Very interesting contents".getBytes(Charsets.US_ASCII);
+    byte[] fileContents = "Very interesting contents".getBytes(US_ASCII);
 
     try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       ApkZFileTestUtils.addAndroidManifest(zf);
@@ -342,7 +341,7 @@ public class JarSigningTest {
     /*
      * Change the file contents ignoring any signing.
      */
-    fileContents = "Not so interesting contents".getBytes(Charsets.US_ASCII);
+    fileContents = "Not so interesting contents".getBytes(US_ASCII);
     try (ZFile zf = ZFile.openReadWrite(zipFile)) {
       zf.add(fileName, new ByteArrayInputStream(fileContents));
     }

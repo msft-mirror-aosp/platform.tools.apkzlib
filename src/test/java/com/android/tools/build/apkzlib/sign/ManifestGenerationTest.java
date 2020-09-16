@@ -16,6 +16,7 @@
 
 package com.android.tools.build.apkzlib.sign;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -23,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 import com.android.tools.build.apkzlib.utils.ApkZFileTestUtils;
 import com.android.tools.build.apkzlib.zip.StoredEntry;
 import com.android.tools.build.apkzlib.zip.ZFile;
-import com.google.common.base.Charsets;
 import com.google.common.io.Closer;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -61,7 +61,7 @@ public class ManifestGenerationTest {
       StoredEntry se = zf.get("META-INF/MANIFEST.MF");
       assertNotNull(se);
 
-      String text = new String(se.read(), Charsets.US_ASCII);
+      String text = new String(se.read(), US_ASCII);
       text = text.trim();
       String[] lines = text.split(System.getProperty("line.separator"), -1);
       assertEquals(3, lines.length);
@@ -97,7 +97,7 @@ public class ManifestGenerationTest {
       StoredEntry se = zf.get("META-INF/MANIFEST.MF");
       assertNotNull(se);
 
-      String text = new String(se.read(), Charsets.US_ASCII);
+      String text = new String(se.read(), US_ASCII);
       text = text.trim();
       String[] lines = text.split(System.getProperty("line.separator"), -1);
       assertEquals(3, lines.length);
@@ -135,7 +135,7 @@ public class ManifestGenerationTest {
       StoredEntry se = zf.get("META-INF/MANIFEST.MF");
       assertNotNull(se);
 
-      String text = new String(se.read(), Charsets.US_ASCII);
+      String text = new String(se.read(), US_ASCII);
       text = text.trim();
       String[] lines = text.split(System.getProperty("line.separator"), -1);
       assertEquals(3, lines.length);

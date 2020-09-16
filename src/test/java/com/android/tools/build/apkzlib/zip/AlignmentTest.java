@@ -17,13 +17,13 @@
 package com.android.tools.build.apkzlib.zip;
 
 import static com.android.tools.build.apkzlib.utils.ApkZFileTestUtils.readSegment;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.google.common.base.Charsets;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -52,7 +52,7 @@ public class AlignmentTest {
   public void addAlignedFile() throws Exception {
     File newZFile = new File(temporaryFolder.getRoot(), "test.zip");
 
-    byte[] testBytes = "This is some text.".getBytes(Charsets.US_ASCII);
+    byte[] testBytes = "This is some text.".getBytes(US_ASCII);
 
     ZFileOptions options = new ZFileOptions();
     options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
@@ -68,7 +68,7 @@ public class AlignmentTest {
   public void addNonAlignedFile() throws Exception {
     File newZFile = new File(temporaryFolder.getRoot(), "test.zip");
 
-    byte[] testBytes = "This is some text.".getBytes(Charsets.US_ASCII);
+    byte[] testBytes = "This is some text.".getBytes(US_ASCII);
 
     ZFileOptions options = new ZFileOptions();
     options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
@@ -83,8 +83,8 @@ public class AlignmentTest {
   public void realignSingleFile() throws Exception {
     File newZFile = new File(temporaryFolder.getRoot(), "test.zip");
 
-    byte[] testBytes0 = "Text number 1".getBytes(Charsets.US_ASCII);
-    byte[] testBytes1 = "Text number 2, which is actually 1".getBytes(Charsets.US_ASCII);
+    byte[] testBytes0 = "Text number 1".getBytes(US_ASCII);
+    byte[] testBytes1 = "Text number 2, which is actually 1".getBytes(US_ASCII);
 
     long offset0;
     try (ZFile zf =
@@ -131,8 +131,8 @@ public class AlignmentTest {
   public void realignFile() throws Exception {
     File newZFile = new File(temporaryFolder.getRoot(), "test.zip");
 
-    byte[] testBytes0 = "Text number 1".getBytes(Charsets.US_ASCII);
-    byte[] testBytes1 = "Text number 2, which is actually 1".getBytes(Charsets.US_ASCII);
+    byte[] testBytes0 = "Text number 1".getBytes(US_ASCII);
+    byte[] testBytes1 = "Text number 2, which is actually 1".getBytes(US_ASCII);
 
     try (ZFile zf = ZFile.openReadWrite(newZFile)) {
       zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
@@ -173,7 +173,7 @@ public class AlignmentTest {
   public void realignAlignedEntry() throws Exception {
     File newZFile = new File(temporaryFolder.getRoot(), "test.zip");
 
-    byte[] testBytes = "This is some text.".getBytes(Charsets.US_ASCII);
+    byte[] testBytes = "This is some text.".getBytes(US_ASCII);
 
     ZFileOptions options = new ZFileOptions();
     options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
@@ -199,8 +199,8 @@ public class AlignmentTest {
   public void alignmentRulesDoNotAffectAddedFiles() throws Exception {
     File newZFile = new File(temporaryFolder.getRoot(), "test.zip");
 
-    byte[] testBytes0 = "Text number 1".getBytes(Charsets.US_ASCII);
-    byte[] testBytes1 = "Text number 2, which is actually 1".getBytes(Charsets.US_ASCII);
+    byte[] testBytes0 = "Text number 1".getBytes(US_ASCII);
+    byte[] testBytes1 = "Text number 2, which is actually 1".getBytes(US_ASCII);
 
     try (ZFile zf = ZFile.openReadWrite(newZFile)) {
       zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
