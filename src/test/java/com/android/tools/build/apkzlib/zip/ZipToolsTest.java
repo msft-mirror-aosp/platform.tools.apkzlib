@@ -16,13 +16,13 @@
 
 package com.android.tools.build.apkzlib.zip;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -169,7 +169,7 @@ public class ZipToolsTest {
     Process proc = pb.start();
     InputStream is = proc.getInputStream();
     byte[] output = ByteStreams.toByteArray(is);
-    String text = new String(output, Charsets.US_ASCII);
+    String text = new String(output, US_ASCII);
     String[] lines = text.split("\n", -1);
     Map<String, Integer> sizes = Maps.newHashMap();
     for (String l : lines) {
