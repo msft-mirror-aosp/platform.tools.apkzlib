@@ -51,7 +51,7 @@ public class ZFilesTest {
 
   @Test
   public void testSigningVeryBigZipEntries() throws Exception {
-    final long FILE_SIZE = 2_200_000_000L;
+    final long fileSize = 2_200_000_000L;
     File zpath = new File(temporaryFolder.getRoot(), "a.zip");
     Optional<SigningOptions> signingOptions =
         Optional.of(
@@ -70,12 +70,12 @@ public class ZFilesTest {
             signingOptions,
             /* builtBy= */ null,
             /* createdBy= */ null)) {
-      zf.add("foo", new RandomDataInputStream(FILE_SIZE));
+      zf.add("foo", new RandomDataInputStream(fileSize));
     }
 
     try (ZFile zf = ZFile.openReadOnly(zpath)) {
       StoredEntry e = zf.get("foo");
-      assertThat(e.getCentralDirectoryHeader().getUncompressedSize()).isEqualTo(FILE_SIZE);
+      assertThat(e.getCentralDirectoryHeader().getUncompressedSize()).isEqualTo(fileSize);
     }
   }
 
@@ -95,11 +95,10 @@ public class ZFilesTest {
     try (ZFile zf =
         ZFiles.apk(
             zpath,
-            new ZFileOptions(),
+            new ZFileOptions().setAlwaysGenerateJarManifest(false),
             signingOptions,
             /* builtBy= */ null,
-            /* createdBy= */ null,
-            false)) {}
+            /* createdBy= */ null)) {}
 
     try (ZFile zf = ZFile.openReadOnly(zpath)) {
       assertThat(zf.get(MANIFEST_NAME)).isNotNull();
@@ -122,14 +121,48 @@ public class ZFilesTest {
     try (ZFile zf =
         ZFiles.apk(
             zpath,
-            new ZFileOptions(),
+            new ZFileOptions().setAlwaysGenerateJarManifest(false),
             signingOptions,
             /* builtBy= */ null,
-            /* createdBy= */ null,
-            false)) {}
+            /* createdBy= */ null)) {}
 
     try (ZFile zf = ZFile.openReadOnly(zpath)) {
       assertThat(zf.get(MANIFEST_NAME)).isNull();
+    }
+  }
+
+  @Test
+  public void testManifestDoesNotExistIfSigningOptionsNotSet() throws Exception {
+    File zpath = new File(temporaryFolder.getRoot(), "a.zip");
+    Optional<SigningOptions> signingOptions = Optional.absent();
+    try (ZFile zf =
+        ZFiles.apk(
+            zpath,
+            new ZFileOptions().setAlwaysGenerateJarManifest(false),
+            signingOptions,
+            /* builtBy= */ null,
+            /* createdBy= */ null)) {}
+
+    try (ZFile zf = ZFile.openReadOnly(zpath)) {
+      assertThat(zf.get(MANIFEST_NAME)).isNull();
+    }
+  }
+
+  // Ensuring that the legacy behaviour of always generating the MANIFEST.MF file is preserved.
+  @Test
+  public void testManifestCreatedByDefault() throws Exception {
+    File zpath = new File(temporaryFolder.getRoot(), "a.zip");
+    Optional<SigningOptions> signingOptions = Optional.absent();
+    try (ZFile zf =
+        ZFiles.apk(
+            zpath,
+            new ZFileOptions(),
+            signingOptions,
+            /* builtBy= */ null,
+            /* createdBy= */ null)) {}
+
+    try (ZFile zf = ZFile.openReadOnly(zpath)) {
+      assertThat(zf.get(MANIFEST_NAME)).isNotNull();
     }
   }
 }
