@@ -14,6 +14,7 @@ maven_java_library(
     pom = ":pom",
     resource_strip_prefix = "tools/apkzlib",
     visibility = [
+        "//tools/base:__pkg__",
         "//tools/base/build-system:__subpackages__",
         "//tools/base/signflinger:__subpackages__",
         "//tools/base/zipflinger:__subpackages__",
