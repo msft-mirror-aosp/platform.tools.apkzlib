@@ -1,17 +1,23 @@
 licenses(["notice"])  # Apache License 2.0
 
-load("//tools/base/bazel:maven.bzl", "maven_pom", "maven_java_library")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
+load("//tools/base/bazel:kotlin.bzl", "maven_library")
+load("//tools/base/common:version.bzl", "BUILD_VERSION")
 
-maven_java_library(
-    name = "apkzlib",
+maven_library(
+    name = "apkzlib_bzl",
     srcs = glob([
         "src/main/java/**/*.java",
     ]),
+    bundled_deps = [
+        ":com.google.auto.value_auto-value_neverlink",
+    ],
+    coordinates = "com.android.tools.build:apkzlib:" + BUILD_VERSION,
+    legacy_name = "apkzlib",
+    notice = "NOTICE",
     plugins = [
         ":auto-value-plugin",
     ],
-    pom = ":pom",
     resource_strip_prefix = "tools/apkzlib",
     visibility = [
         "//tools/base/build-system:__subpackages__",
@@ -20,20 +26,12 @@ maven_java_library(
         "//tools/base/zipflinger:__subpackages__",
     ],
     deps = [
-        ":com.google.auto.value_auto-value_neverlink",
-        "//tools/base/build-system:tools.apksig",
-        "//tools/base/third_party:com.google.code.findbugs_jsr305",
-        "//tools/base/third_party:com.google.guava_guava",
-        "//tools/base/third_party:org.bouncycastle_bcpkix-jdk15on",
-        "//tools/base/third_party:org.bouncycastle_bcprov-jdk15on",
+        "//tools/base/build-system:tools.apksig_bzl",
+        "@maven//:com.google.code.findbugs.jsr305",
+        "@maven//:com.google.guava.guava",
+        "@maven//:org.bouncycastle.bcpkix-jdk15on",
+        "@maven//:org.bouncycastle.bcprov-jdk15on",
     ],
-)
-
-maven_pom(
-    name = "pom",
-    artifact = "apkzlib",
-    group = "com.android.tools.build",
-    source = "//tools/buildSrc/base:build_version",
 )
 
 java_library(
