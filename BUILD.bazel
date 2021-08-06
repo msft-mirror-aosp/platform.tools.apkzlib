@@ -42,12 +42,12 @@ java_library(
         ":apkzlib",
         "//tools/base/build-system:tools.apksig",
         "//tools/base/testutils:tools.testutils",
-        "//tools/base/third_party:com.google.guava_guava",
-        "//tools/base/third_party:com.google.truth_truth",
-        "//tools/base/third_party:junit_junit",
-        "//tools/base/third_party:org.bouncycastle_bcpkix-jdk15on",
-        "//tools/base/third_party:org.bouncycastle_bcprov-jdk15on",
-        "//tools/base/third_party:org.mockito_mockito-core",
+        "@maven//:com.google.guava.guava",
+        "@maven//:com.google.truth.truth",
+        "@maven//:junit.junit",
+        "@maven//:org.bouncycastle.bcpkix-jdk15on",
+        "@maven//:org.bouncycastle.bcprov-jdk15on",
+        "@maven//:org.mockito.mockito-core",
     ],
 )
 
@@ -60,7 +60,7 @@ coverage_java_test(
     runtime_deps = [
         ":apkzlib_tests_lib",
         "//tools/base/testutils:tools.testutils",
-        "//tools/base/third_party:junit_junit",
+        "@maven//:junit.junit",
     ],
 )
 
@@ -68,8 +68,8 @@ java_plugin(
     name = "auto-value-plugin",
     processor_class = "com.google.auto.value.processor.AutoValueProcessor",
     deps = [
-        "//tools/base/third_party:com.google.auto.value_auto-value",
-        "//tools/base/third_party:com.google.auto.value_auto-value-annotations",
+        "@maven//:com.google.auto.value.auto-value",
+        "@maven//:com.google.auto.value.auto-value-annotations",
     ],
 )
 
@@ -78,8 +78,8 @@ java_library(
     name = "com.google.auto.value_auto-value_neverlink",
     neverlink = 1,
     exports = [
-        "//tools/base/third_party:com.google.auto.value_auto-value",
-        "//tools/base/third_party:com.google.auto.value_auto-value-annotations",
+        "@maven//:com.google.auto.value.auto-value",
+        "@maven//:com.google.auto.value.auto-value-annotations",
     ],
 )
 
