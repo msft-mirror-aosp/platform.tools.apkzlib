@@ -5,7 +5,7 @@ load("//tools/base/bazel:kotlin.bzl", "maven_library")
 load("//tools/base/common:version.bzl", "BUILD_VERSION")
 
 maven_library(
-    name = "apkzlib_bzl",
+    name = "apkzlib",
     srcs = glob([
         "src/main/java/**/*.java",
     ]),
@@ -13,7 +13,6 @@ maven_library(
         ":com.google.auto.value_auto-value_neverlink",
     ],
     coordinates = "com.android.tools.build:apkzlib:" + BUILD_VERSION,
-    legacy_name = "apkzlib",
     notice = "NOTICE",
     plugins = [
         ":auto-value-plugin",
@@ -26,7 +25,7 @@ maven_library(
         "//tools/base/zipflinger:__subpackages__",
     ],
     deps = [
-        "//tools/base/build-system:tools.apksig_bzl",
+        "//tools/base/build-system:tools.apksig",
         "@maven//:com.google.code.findbugs.jsr305",
         "@maven//:com.google.guava.guava",
         "@maven//:org.bouncycastle.bcpkix-jdk15on",
