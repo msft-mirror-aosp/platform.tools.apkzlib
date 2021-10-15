@@ -13,12 +13,14 @@ maven_library(
         ":com.google.auto.value_auto-value_neverlink",
     ],
     coordinates = "com.android.tools.build:apkzlib:" + BUILD_VERSION,
+    description = "Library used to incrementally build and sign APKs",
     notice = "NOTICE",
     plugins = [
         ":auto-value-plugin",
     ],
     resource_strip_prefix = "tools/apkzlib",
     visibility = [
+        "//tools/base:__pkg__",
         "//tools/base/build-system:__subpackages__",
         "//tools/base/gmaven:__pkg__",
         "//tools/base/signflinger:__subpackages__",
@@ -80,17 +82,4 @@ java_library(
         "@maven//:com.google.auto.value.auto-value",
         "@maven//:com.google.auto.value.auto-value-annotations",
     ],
-)
-
-filegroup(
-    name = "agp_gradle_build_files",
-    srcs = glob([
-        "src/main/**/*.java",
-        "src/main/**/*.kt",
-        "src/main/resources/**",
-    ]) + [
-        "build.gradle",
-        "NOTICE",
-    ],
-    visibility = ["//tools/base/build-system:__pkg__"],
 )
