@@ -12,13 +12,14 @@ maven_library(
     bundled_deps = [
         ":com.google.auto.value_auto-value_neverlink",
     ],
-    coordinates = "com.android.tools.build:apkzlib:" + BUILD_VERSION,
+    coordinates = "com.android.tools.build:apkzlib",
     description = "Library used to incrementally build and sign APKs",
     notice = "NOTICE",
     plugins = [
         ":auto-value-plugin",
     ],
     resource_strip_prefix = "tools/apkzlib",
+    version = BUILD_VERSION,
     visibility = [
         "//tools/base:__pkg__",
         "//tools/base/build-system:__subpackages__",
